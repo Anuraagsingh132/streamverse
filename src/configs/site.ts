@@ -474,14 +474,19 @@ export const siteConfig = {
       // icon: Icons.play,
     },
     {
+      title: 'Movies',
+      href: '/movies',
+      // icon: Icons.movie,
+    },
+    {
       title: 'TV Shows',
       href: '/tv-shows',
       // icon: Icons.tvShow,
     },
     {
-      title: 'Movies',
-      href: '/movies',
-      // icon: Icons.movie,
+      title: 'Watch Later',
+      href: '/watch-later',
+      // icon: Icons.bookmark,
     },
     {
       title: 'New & Popular',
@@ -491,9 +496,8 @@ export const siteConfig = {
     {
       title: 'About',
       href: 'https://developer.streamverse.biz',
-      // icon: Icons.trendingUp,
+      // icon: Icons.info,
     },
-    
     // {
     //   title: "My List",
     //   href: "/my-list",

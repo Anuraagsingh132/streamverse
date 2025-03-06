@@ -3,7 +3,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
 import '@/styles/globals.css';
 // import { TrpcProvider } from '@/client/trpc-provider';
-import type { Metadata, Viewport } from 'next';
+import type { Metadata } from 'next';
 import { Inter as FontSans } from 'next/font/google';
 import localFont from 'next/font/local';
 import { Analytics } from '@/components/analytics';
@@ -11,6 +11,11 @@ import { siteConfig } from '@/configs/site';
 import { env } from '@/env.mjs';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import Script from 'next/script';
+import { Toaster } from 'sonner';
+import dynamic from 'next/dynamic';
+
+// Import client-only components dynamically
+const ClientOnly = dynamic(() => import('@/components/client-only'), { ssr: false });
 
 export const runtime = 'edge';
 
@@ -26,11 +31,14 @@ const fontHeading = localFont({
   variable: '--font-heading',
 });
 
-export const viewport: Viewport = {
+// Define viewport for Next.js app
+export const viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: 'white' },
     { media: '(prefers-color-scheme: dark)', color: 'black' },
   ],
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export const metadata: Metadata = {
@@ -76,23 +84,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
           'overlflow-y-auto min-h-screen overflow-x-hidden bg-background font-sans antialiased',
           fontSans.variable,
           fontHeading.variable,
-        )}>
+        )}
+        suppressHydrationWarning
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange>
           {/* <TrpcProvider> */}
-          {children}
-          <TailwindIndicator />
-          <Analytics />
-          <SpeedInsights />
+          <ClientOnly>
+            {children}
+            <TailwindIndicator />
+            <Analytics />
+            <SpeedInsights />
+            <Toaster position="top-center" richColors />
+          </ClientOnly>
           {/* </TrpcProvider> */}
 
           {/* Google Analytics */}
@@ -149,7 +162,7 @@ export default function RootLayout({
             </div>
           </noscript>
 
-                  {/* Ad Script */}
+          {/* Ad Script */}
           <Script
             id="ad-script"
             dangerouslySetInnerHTML={{
@@ -189,7 +202,6 @@ export default function RootLayout({
           `,
             }}
           />
-          
 
           {/* Umami Analytics */}
           <script

@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/dialog';
 import { getMobileDetect, getYear } from '@/lib/utils';
 import MovieService from '@/services/MovieService';
+import UserService from '@/services/UserService/UserService';
+import { useAuthStore } from '@/services/AuthService/AuthService';
 import { useModalStore } from '@/stores/modal';
 import {
   MediaType,
@@ -22,6 +24,7 @@ import { usePathname } from 'next/navigation';
 import * as React from 'react';
 import Youtube from 'react-youtube';
 import CustomImage from './custom-image';
+import { toast } from 'sonner';
 
 type YouTubePlayer = {
   mute: () => void;
@@ -43,7 +46,7 @@ const defaultOptions: Record<string, object> = {
   playerVars: {
     // https://developers.google.com/youtube/player_parameters
     rel: 0,
-    mute: isMobile() ? 1 : 0,
+    mute: 1, // Always start muted to avoid autoplay issues
     loop: 1,
     autoplay: 1,
     controls: 0,
@@ -59,30 +62,83 @@ const defaultOptions: Record<string, object> = {
 const ShowModal = () => {
   // stores
   const modalStore = useModalStore();
-  const IS_MOBILE: boolean = isMobile();
+  const IS_MOBILE: boolean = typeof window !== 'undefined' ? isMobile() : false;
 
   const [trailer, setTrailer] = React.useState('');
-  const [isPlaying, setPlaying] = React.useState(true);
+  const [isPlaying, setPlaying] = React.useState(false);
   const [genres, setGenres] = React.useState<Genre[]>([]);
-  const [isMuted, setIsMuted] = React.useState<boolean>(
-    modalStore.firstLoad || IS_MOBILE,
-  );
-  const [options, setOptions] =
-    React.useState<Record<string, object>>(defaultOptions);
+  const [isMuted, setIsMuted] = React.useState<boolean>(true); // Always start muted
+  const [options, setOptions] = React.useState<Record<string, object>>(defaultOptions);
+  const [isInWatchlist, setIsInWatchlist] = React.useState<boolean>(false);
+  const [isAddingToWatchlist, setIsAddingToWatchlist] = React.useState<boolean>(false);
+  const [isMounted, setIsMounted] = React.useState<boolean>(false);
 
-  const youtubeRef = React.useRef(null);
+  const { user, isAuthenticated } = useAuthStore();
+  const youtubeRef = React.useRef<any>(null);
   const imageRef = React.useRef<HTMLImageElement>(null);
+
+  // Client-side only effect
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // get trailer and genres of show
   React.useEffect(() => {
-    if (modalStore.firstLoad || IS_MOBILE) {
-      setOptions((state: Record<string, object>) => ({
-        ...state,
-        playerVars: { ...state.playerVars, mute: 1 },
-      }));
-    }
+    if (!isMounted) return;
+    
     void handleGetData();
-  }, []);
+
+    // Reset when a new show is loaded
+    setIsMuted(true);
+    setPlaying(false);
+  }, [isMounted, modalStore.show?.id]);
+
+  // Start playing when the modal is opened with play=true
+  React.useEffect(() => {
+    if (!isMounted) return;
+    
+    if (modalStore.open && modalStore.play && trailer) {
+      console.log('Auto-playing trailer:', trailer);
+      setPlaying(true);
+      
+      // Make sure we set the correct YouTube player options for autoplay
+      setOptions({
+        ...defaultOptions,
+        playerVars: {
+          ...defaultOptions.playerVars,
+          autoplay: 1,
+          mute: 1
+        }
+      });
+    }
+  }, [isMounted, modalStore.open, modalStore.play, trailer]);
+
+  // Check if the show is in the user's watchlater
+  React.useEffect(() => {
+    if (!isMounted) return;
+    
+    const checkWatchlist = async () => {
+      if (isAuthenticated && user && modalStore.show?.id) {
+        try {
+          setIsAddingToWatchlist(true);
+          const result = await UserService.isInWatchlist(user.id, modalStore.show.id);
+          setIsInWatchlist(result);
+        } catch (error) {
+          console.error('Error checking watchlater status:', error);
+        } finally {
+          setIsAddingToWatchlist(false);
+        }
+      }
+    };
+    
+    // Only check if authenticated and show exists
+    if (isAuthenticated && user && modalStore.show?.id) {
+      void checkWatchlist();
+    } else {
+      // Reset state if not authenticated
+      setIsInWatchlist(false);
+    }
+  }, [isAuthenticated, user, modalStore.show, isMounted]);
 
   const handleGetData = async () => {
     const id: number | undefined = modalStore.show?.id;
@@ -91,19 +147,24 @@ const ShowModal = () => {
     if (!id || !type) {
       return;
     }
-    const data: ShowWithGenreAndVideo = await MovieService.findMovieByIdAndType(
-      id,
-      type,
-    );
-    if (data?.genres) {
-      setGenres(data.genres);
-    }
-    if (data.videos?.results?.length) {
-      const videoData: VideoResult[] = data.videos?.results;
-      const result: VideoResult | undefined = videoData.find(
-        (item: VideoResult) => item.type === 'Trailer',
+    
+    try {
+      const data: ShowWithGenreAndVideo = await MovieService.findMovieByIdAndType(
+        id,
+        type,
       );
-      if (result?.key) setTrailer(result.key);
+      if (data?.genres) {
+        setGenres(data.genres);
+      }
+      if (data.videos?.results?.length) {
+        const videoData: VideoResult[] = data.videos?.results;
+        const result: VideoResult | undefined = videoData.find(
+          (item: VideoResult) => item.type === 'Trailer',
+        );
+        if (result?.key) setTrailer(result.key);
+      }
+    } catch (error) {
+      console.error('Error fetching show details:', error);
     }
   };
 
@@ -120,31 +181,120 @@ const ShowModal = () => {
     event.target.seekTo(0);
   };
 
-  const onPlay = () => {
-    if (imageRef.current) {
-      imageRef.current.style.opacity = '0';
-    }
-    if (youtubeRef.current) {
-      const iframeRef: HTMLElement | null =
-        document.getElementById('video-trailer');
-      if (iframeRef) iframeRef.classList.remove('opacity-0');
+  const onReady = (event: YouTubeEvent) => {
+    console.log('YouTube player ready');
+    // If play mode is active, start playing right away
+    if (modalStore.play) {
+      console.log('Auto-playing video');
+      event.target.playVideo();
+      
+      // Unmute after a short delay (this helps with autoplay policies)
+      setTimeout(() => {
+        console.log('Unmuting video');
+        event.target.unMute();
+        setIsMuted(false);
+      }, 800);
     }
   };
 
-  const onReady = (event: YouTubeEvent) => {
-    event.target.playVideo();
+  const onPlay = () => {
+    console.log('YouTube video playing');
+    setPlaying(true);
+    
+    // If the video was muted by default, unmute it now
+    if (isMuted && youtubeRef.current?.internalPlayer) {
+      setTimeout(() => {
+        youtubeRef.current.internalPlayer.unMute();
+        setIsMuted(false);
+      }, 500);
+    }
   };
 
   const handleChangeMute = () => {
     setIsMuted((state: boolean) => !state);
     if (!youtubeRef.current) return;
-    const videoRef: YouTubePlayer = youtubeRef.current as YouTubePlayer;
-    if (isMuted && youtubeRef.current) {
-      videoRef.internalPlayer.unMute();
-    } else if (youtubeRef.current) {
-      videoRef.internalPlayer.mute();
+    
+    try {
+      const videoRef: YouTubePlayer = youtubeRef.current as YouTubePlayer;
+      if (isMuted && youtubeRef.current && videoRef.internalPlayer && typeof videoRef.internalPlayer.unMute === 'function') {
+        videoRef.internalPlayer.unMute();
+      } else if (youtubeRef.current && videoRef.internalPlayer && typeof videoRef.internalPlayer.mute === 'function') {
+        videoRef.internalPlayer.mute();
+      }
+    } catch (error) {
+      console.error('Error changing mute state:', error);
     }
   };
+
+  const handleWatchLater = async () => {
+    if (!isAuthenticated || !user) {
+      toast.error('Please login to add to Watch Later');
+      document.getElementById('auth-modal-trigger')?.click();
+      return;
+    }
+
+    if (!modalStore.show) return;
+
+    try {
+      setIsAddingToWatchlist(true);
+      
+      // Optimistic UI update first for immediate feedback
+      setIsInWatchlist(prevState => !prevState);
+      
+      if (isInWatchlist) {
+        // If already in watchlater, we need to find and remove it
+        try {
+          // First get the watchlater to find the item ID
+          const watchlist = await UserService.getWatchlist(user.id);
+          const item = watchlist.find(item => Number(item.movieId) === Number(modalStore.show?.id));
+          
+          if (item) {
+            // Remove from watchlater (cache is already updated)
+            await UserService.removeFromWatchlist(user.id, item.id);
+            toast.success('Removed from Watch Later');
+          } else {
+            // Edge case: Database shows it's in watchlater but we can't find it
+            toast.error('Could not find this show in your Watch Later list');
+            
+            // Force a refresh of the watchlater (in background)
+            UserService.refreshWatchlist(user.id).catch(console.error);
+            
+            // Reset UI state
+            setIsInWatchlist(false);
+          }
+        } catch (removeError) {
+          console.error('Error removing from watchlater:', removeError);
+          toast.error('Failed to remove from Watch Later list');
+          
+          // Revert optimistic update on error
+          setIsInWatchlist(true);
+        }
+      } else {
+        // Add to watchlater with proper validation - cache is updated inside
+        await UserService.addToWatchlist(user.id, {
+          movieId: Number(modalStore.show.id),
+          title: modalStore.show.title || modalStore.show.name || 'Unknown',
+          posterPath: modalStore.show.poster_path || modalStore.show.backdrop_path || '',
+          mediaType: modalStore.show.media_type || 'movie',
+        });
+        
+        toast.success('Added to Watch Later');
+      }
+    } catch (error) {
+      console.error('Error updating watchlater:', error);
+      toast.error('Failed to update Watch Later list');
+      
+      // Revert optimistic update on error
+      setIsInWatchlist(!isInWatchlist);
+    } finally {
+      setIsAddingToWatchlist(false);
+    }
+  };
+
+  // If not mounted (server-side), render a placeholder to avoid hydration issues
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <Dialog
@@ -176,9 +326,9 @@ const ShowModal = () => {
                 modalStore.show?.name ??
                 'video-trailer'
               }
-              className="relative aspect-video w-full"
+              className="relative z-10 aspect-video w-full"
               style={{ width: '100%', height: '100%' }}
-              iframeClassName={`relative pointer-events-none w-[100%] h-[100%] z-[-10] opacity-0`}
+              iframeClassName={`relative pointer-events-none w-[100%] h-[100%] ${isPlaying ? 'opacity-100 z-20' : 'opacity-0 z-[-10]'}`}
             />
           )}
           <div className="absolute bottom-6 z-20 flex w-full items-center justify-between gap-2 px-10">
@@ -201,6 +351,22 @@ const ShowModal = () => {
                   </>
                 </Button>
               </Link>
+              
+              <Button
+                onClick={handleWatchLater}
+                disabled={isAddingToWatchlist}
+                aria-label="Add to watch later"
+                variant="outline"
+                className="group h-auto rounded py-1.5">
+                <>
+                  {isAddingToWatchlist ? (
+                    <Icons.loader className="mr-1.5 h-5 w-5 animate-spin" />
+                  ) : (
+                    <Icons.bookmark className={`mr-1.5 h-5 w-5 ${isInWatchlist ? 'fill-current text-primary' : ''}`} />
+                  )}
+                  {isInWatchlist ? 'In Watch Later' : 'Watch Later'}
+                </>
+              </Button>
             </div>
             <Button
               aria-label={`${isMuted ? 'Unmute' : 'Mute'} video`}

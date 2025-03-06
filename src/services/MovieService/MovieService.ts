@@ -100,6 +100,10 @@ class MovieService extends BaseService {
         }&language=en-US&with_original_language=en&page=${
           req.page ?? 1
         }&without_genres=${Genre.TALK},${Genre.NEWS}`;
+      case RequestType.SIMILAR:
+        return `/${req.mediaType}/${req.id}/similar?language=en-US&page=${
+          req.page ?? 1
+        }`;
       case RequestType.KOREAN:
         return `/discover/${req.mediaType}?with_genres=${
           req.genre

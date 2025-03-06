@@ -1,5 +1,6 @@
 import SiteFooter from '@/components/main/site-footer';
 import SiteHeader from '@/components/main/site-header';
+import ShowModal from '@/components/shows-modal';
 
 const FrontLayout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -7,6 +8,7 @@ const FrontLayout = ({ children }: { children: React.ReactNode }) => {
       <SiteHeader />
       <main>{children}</main>
       <SiteFooter />
+      <ShowModal />
     </div>
   );
 };

@@ -10,6 +10,8 @@ interface ModalState {
   play: boolean;
   setPlay: (play: boolean) => void;
   reset: () => void;
+  onOpen: (show: Show, autoplay?: boolean) => void;
+  onClose: () => void;
 }
 
 export const useModalStore = create<ModalState>()((set) => ({
@@ -27,5 +29,17 @@ export const useModalStore = create<ModalState>()((set) => ({
       open: false,
       play: false,
       firstLoad: false,
+    })),
+  onOpen: (show: Show, autoplay = false) => 
+    set(() => ({
+      show,
+      open: true,
+      play: autoplay,
+      firstLoad: true,
+    })),
+  onClose: () =>
+    set(() => ({
+      open: false,
+      play: false,
     })),
 }));

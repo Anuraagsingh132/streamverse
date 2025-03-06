@@ -50,8 +50,11 @@ export function getSearchValue(input: string): string {
   return urlParams.get(input) ?? '';
 }
 
-export function getSlug(id: number, name: string): string {
+export function getSlug(id: number | string, name?: string): string {
   // build slug from name and id
+  if (!name) {
+    return `unknown-${id}`;
+  }
   const regex = /([^\x00-\x7F]|[&$\+,:;=\?@#\s<>\[\]\{\}|\\\^%])+/gm;
   return `${name.toLowerCase().replace(regex, '-')}-${id}`;
 }
@@ -62,8 +65,7 @@ export function buildMovieUrl(show: Show): string {
   return `${env.NEXT_PUBLIC_APP_URL}/${
     show.media_type === MediaType.MOVIE ? 'movies' : 'tv-shows'
   }/${getSlug(id, name)}`;
-} 
-
+}
 
 export function getIdFromSlug(slug: string): number {
   // get id from slug

@@ -4,6 +4,20 @@ import { buttonVariants } from "@/components/ui/button";
 import { siteConfig } from "@/configs/site";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import dynamic from 'next/dynamic';
+
+// Import the Watch Later section with dynamic loading to ensure it only loads on the client side
+const WatchLaterSection = dynamic(() => import('@/components/watch-later-section'), {
+  ssr: false,
+  loading: () => <div className="container py-8">
+    <div className="flex items-center justify-between mb-4">
+      <h2 className="text-2xl font-bold">Continue Watching</h2>
+    </div>
+    <div className="flex justify-center items-center h-32">
+      <Icons.spinner className="h-8 w-8 animate-spin text-muted-foreground" />
+    </div>
+  </div>,
+});
 
 export default function Index() {
   return (
@@ -41,6 +55,10 @@ export default function Index() {
           {/*   rel="noreferrer">GitHub</Link> */}
         </div>
       </section>
+      
+      {/* Watch Later Section */}
+      <WatchLaterSection />
+      
       <section
         id="features"
         className="container space-y-6 bg-slate-50 py-8 dark:bg-transparent md:py-12 lg:py-24"
@@ -99,7 +117,21 @@ export default function Index() {
           <div className="relative overflow-hidden rounded-lg border bg-background p-2">
             <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
               <svg viewBox="0 0 24 24" className="h-12 w-12 fill-current">
-                <path d="M12.001 4.8c-3.2 0-5.2 1.6-6 4.8 1.2-1.6 2.6-2.2 4.2-1.8.913.228 1.565.89 2.288 1.624C13.666 10.618 15.027 12 18.001 12c3.2 0 5.2-1.6 6-4.8-1.2 1.6-2.6 2.2-4.2 1.8-.913-.228-1.565-.89-2.288-1.624C16.337 6.182 14.976 4.8 12.001 4.8zm-6 7.2c-3.2 0-5.2 1.6-6 4.8 1.2-1.6 2.6-2.2 4.2-1.8.913.228 1.565.89 2.288 1.624 1.177 1.194 2.538 2.576 5.512 2.576 3.2 0 5.2-1.6 6-4.8-1.2 1.6-2.6 2.2-4.2 1.8-.913-.228-1.565-.89-2.288-1.624C10.337 13.382 8.976 12 6.001 12z" />
+                <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.594-7.305h.003z" />
+              </svg>
+              <div className="space-y-2">
+                <h3 className="font-bold">Watch Party</h3>
+                <p className="text-sm text-muted-foreground">
+                  Watch together with friends. Chat and react in real time to
+                  the same stream.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="relative overflow-hidden rounded-lg border bg-background p-2">
+            <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
+              <svg viewBox="0 0 24 24" className="h-12 w-12 fill-current">
+                <path d="M12.001 4.8c-3.2 0-5.2 1.6-6 4.8 1.2-1.6 2.6-2.2 4.2-1.8.913.228 1.565.89 2.288 1.624C13.666 10.618 15.027 12 18.001 12c3.2 0 5.2-1.6 6-4.8-1.2 1.6-2.6 2.2-4.2 1.8-.913-.228-1.565-.89-2.288-1.624 1.177 1.194 2.538 2.576 5.512 2.576 3.2 0 5.2-1.6 6-4.8-1.2 1.6-2.6 2.2-4.2 1.8-.913-.228-1.565-.89-2.288-1.624C10.337 6.182 8.976 4.8 6.001 4.8zm-6 7.2c-3.2 0-5.2 1.6-6 4.8 1.2-1.6 2.6-2.2 4.2-1.8.913.228 1.565.89 2.288 1.624 1.177 1.194 2.538 2.576 5.512 2.576 3.2 0 5.2-1.6 6-4.8-1.2 1.6-2.6 2.2-4.2 1.8-.913-.228-1.565-.89-2.288-1.624C10.337 13.382 8.976 12 6.001 12z" />
               </svg>
               <div className="space-y-2">
                 <h3 className="font-bold">Watch Party</h3>
