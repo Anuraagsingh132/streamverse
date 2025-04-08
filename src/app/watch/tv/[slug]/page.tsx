@@ -10,7 +10,7 @@ async function getWorkingSeriesUrl(id: string): Promise<string | null> {
     
 (id: string) => `https://embed.su/embed/tv/${id}/1/1`,
 (id: string) => `https://vidsrc.pro/embed/tv/${id}/1/1`,
-(id: string) => `https://vidsrc.xyz/embed/tv/${id}?season=1&episode=1`,
+//(id: string) => `https://vidsrc.xyz/embed/tv/${id}?season=1&episode=1`,
 (id: string) => `https://www.NontonGo.win/embed/tv/${id}/1/1`,
 (id: string) => `https://www.NontonGo.win/embed/tv/?id=${id}&s=1&e=1`,
 (id: string) => `https://vidlink.pro/tv/${id}/1/1?primaryColor=%23FFFFFF&secondaryColor=%23FFFFFF&iconColor=%23ffffff&nextbutton=true&autoplay=false`,
