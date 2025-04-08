@@ -8,29 +8,17 @@ async function getWorkingSeriesUrl(id: string): Promise<string | null> {
     
 
     
-(id: string) => `https://embed.su/embed/tv/${id}/1/1`,    
+(id: string) => `https://embed.su/embed/tv/${id}/1/1`,
 (id: string) => `https://vidsrc.pro/embed/tv/${id}/1/1`,
-(id: string) => `https://flicky.host/embed/anime/?id=${id}/1/1`,
-(id: string) => `https://www.embedsoap.com/embed/tv/?id=${id}&s=1&e=1`,
 (id: string) => `https://vidsrc.xyz/embed/tv/${id}?season=1&episode=1`,
-(id: string) => `https://vidsrc.cc/v2/embed/tv/${id}/1/1?autoPlay=true&autoNext=true`,
 (id: string) => `https://www.NontonGo.win/embed/tv/${id}/1/1`,
 (id: string) => `https://www.NontonGo.win/embed/tv/?id=${id}&s=1&e=1`,
-(id: string) => `https://moviesapi.club/tv/${id}/1/1`,
 (id: string) => `https://vidlink.pro/tv/${id}/1/1?primaryColor=%23FFFFFF&secondaryColor=%23FFFFFF&iconColor=%23ffffff&nextbutton=true&autoplay=false`,
-(id: string) => `https://player.vidsrc.nl/embed/tv/${id}/1/1`,
-(id: string) => `https://vidsrc.rip/embed/tv/${id}/1/1`,
 (id: string) => `https://vidbinge.dev/embed/tv/${id}/1/1`,
-(id: string) => `https://moviee.tv/embed/tv/${id}?season=1&episode=1`,
 (id: string) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=1&e=1`,
 (id: string) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1&s=1&e=1`,
 (id: string) => `https://vidsrc.icu/embed/tv/${id}/1/1`,
 
-//doesnt work
-(id: string) => `https://player.smashy.stream/tv/${id}?s=1&e=1`,
-(id: string) => `https://flicky.host/embed/tv/?id=${id}/1/1`,
-(id: string) => `https://vidlink.pro/tv/${id}/1/1?player=jw&multiLang=true`,
-(id: string) => `https://player.autoembed.cc/embed/tv/${id}/1/1`,
 
   ];
 
