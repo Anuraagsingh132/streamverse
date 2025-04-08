@@ -12,29 +12,21 @@ async function getWorkingEmbedUrl(id: string): Promise<string | null> {
     //(id: string) => `https://vidbinge.dev/embed/movie/${id}`,*/
 
     
-(id: string) => `https://vidsrc2.to/embed/movie/${id}`,
 (id: string) => `https://embed.su/embed/movie/${id}`,
-(id: string) => `https://flicky.host/embed/movie/${id}`,
-(id: string) => `https://www.embedsoap.com/embed/movie/${id}`,
 (id: string) => `https://player.autoembed.cc/embed/movie/${id}`,
 (id: string) => `https://player.smashy.stream/movie/${id}`,
-(id: string) => `https://vidsrc.cc/v2/embed/movie/${id}?autoPlay=true`,
 (id: string) => `https://vidsrc.xyz/embed/movie/${id}`,
-(id: string) => `https://anime.autoembed.cc/embed/${id}-episode-1`,
 (id: string) => `https://2anime.xyz/embed/${id}-episode-1`,
 (id: string) => `https://www.2embed.cc/embed/${id}`,
 (id: string) => `https://www.nontongo.win/embed/movie/${id}`,
-(id: string) => `https://embed.anicdn.top/v/${id.replace(/\s+/g, '-')}-dub/1.html`,
 (id: string) => `https://vidlink.pro/movie/${id}?primaryColor=#FFFFFF&secondaryColor=#FFFFFF&iconColor=#FFFFFF&autoplay=false`,
 (id: string) => `https://vidlink.pro/movie/${id}?player=jw&multiLang=true&primaryColor=#FFFFFF&secondaryColor=#FFFFFF&iconColor=#FFFFFF`,
-(id: string) => `https://player.vidsrc.nl/embed/movie/${id}`,
-(id: string) => `https://vidsrc.rip/embed/movie/${id}`,
 (id: string) => `https://vidbinge.dev/embed/movie/${id}`,
 (id: string) => `https://moviesapi.club/movie/${id}`,
-(id: string) => `https://moviee.tv/embed/movie/${id}`,
 (id: string) => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
 (id: string) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1`,
 (id: string) => `https://vidsrc.icu/embed/movie/${id}`,
+
   ];
 
   for (const makeUrl of sources) {
