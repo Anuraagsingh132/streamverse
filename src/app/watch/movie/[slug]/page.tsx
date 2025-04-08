@@ -10,9 +10,10 @@ async function getWorkingEmbedUrl(id: string): Promise<string | null> {
     (id: string) => `https://vidlink.pro/movie/${id}`,
     (id: string) => `https://vidsrc.su/embed/movie/${id}`,
     //(id: string) => `https://vidbinge.dev/embed/movie/${id}`,*/
+
     
 (id: string) => `https://vidsrc2.to/embed/movie/${id}`,
-
+(id: string) => `https://embed.su/embed/movie/${id}`,
 (id: string) => `https://flicky.host/embed/movie/${id}`,
 (id: string) => `https://www.embedsoap.com/embed/movie/${id}`,
 (id: string) => `https://player.autoembed.cc/embed/movie/${id}`,
@@ -32,7 +33,6 @@ async function getWorkingEmbedUrl(id: string): Promise<string | null> {
 (id: string) => `https://moviesapi.club/movie/${id}`,
 (id: string) => `https://moviee.tv/embed/movie/${id}`,
 (id: string) => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
-(id: string) => `https://embed.su/embed/movie/${id}`,
 (id: string) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1`,
 (id: string) => `https://vidsrc.icu/embed/movie/${id}`,
   ];
