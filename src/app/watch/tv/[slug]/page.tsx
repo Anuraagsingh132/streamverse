@@ -6,10 +6,10 @@ export const revalidate = 3600;
 async function getWorkingSeriesUrl(id: string): Promise<string | null> {
   const sources = [
     
+
     
-    
+(id: string) => `https://embed.su/embed/tv/${id}/1/1`,    
 (id: string) => `https://vidsrc.pro/embed/tv/${id}/1/1`,
-(id: string) => `https://embed.su/embed/tv/${id}/1/1`,
 (id: string) => `https://flicky.host/embed/anime/?id=${id}/1/1`,
 (id: string) => `https://www.embedsoap.com/embed/tv/?id=${id}&s=1&e=1`,
 (id: string) => `https://vidsrc.xyz/embed/tv/${id}?season=1&episode=1`,
