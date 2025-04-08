@@ -3,18 +3,67 @@ import EmbedPlayer from '@/components/watch/embed-player';
 
 export const revalidate = 3600;
 
-export default function Page({ params }: { params: { slug: string } }) {
-  const id = params.slug.split('-').pop();
+async function getWorkingEmbedUrl(id: string): Promise<string | null> {
+  const sources = [
+    /*(id: string) => `https://embed.su/embed/movie/${id}`,
+    (id: string) => `https://flicky.host/embed/movie/?id=${id}`,
+    (id: string) => `https://vidlink.pro/movie/${id}`,
+    (id: string) => `https://vidsrc.su/embed/movie/${id}`,
+    //(id: string) => `https://vidbinge.dev/embed/movie/${id}`,*/
+    
+(id: string) => `https://vidsrc2.to/embed/movie/${id}`,
 
-  // Example with vidbinge.dev
-  //return <EmbedPlayer url={`https://vidsrc.su/embed/movie/${id}`} />;
-  //return <EmbedPlayer url={`https://flicky.host/embed/movie/?id=${id}`} />;
-  //return <EmbedPlayer url={`https://vidbinge.dev/embed/movie/${id}`} />;
-  //return <EmbedPlayer url={`https://vidlink.pro/movie/${id}?primaryColor=63b8bc&secondaryColor=a2a2a2&iconColor=eefdec&icons=vid&player=default&title=true&poster=true&autoplay=true&nextbutton=false`} />;
+(id: string) => `https://flicky.host/embed/movie/${id}`,
+(id: string) => `https://www.embedsoap.com/embed/movie/${id}`,
+(id: string) => `https://player.autoembed.cc/embed/movie/${id}`,
+(id: string) => `https://player.smashy.stream/movie/${id}`,
+(id: string) => `https://vidsrc.cc/v2/embed/movie/${id}?autoPlay=true`,
+(id: string) => `https://vidsrc.xyz/embed/movie/${id}`,
+(id: string) => `https://anime.autoembed.cc/embed/${id}-episode-1`,
+(id: string) => `https://2anime.xyz/embed/${id}-episode-1`,
+(id: string) => `https://www.2embed.cc/embed/${id}`,
+(id: string) => `https://www.nontongo.win/embed/movie/${id}`,
+(id: string) => `https://embed.anicdn.top/v/${id.replace(/\s+/g, '-')}-dub/1.html`,
+(id: string) => `https://vidlink.pro/movie/${id}?primaryColor=#FFFFFF&secondaryColor=#FFFFFF&iconColor=#FFFFFF&autoplay=false`,
+(id: string) => `https://vidlink.pro/movie/${id}?player=jw&multiLang=true&primaryColor=#FFFFFF&secondaryColor=#FFFFFF&iconColor=#FFFFFF`,
+(id: string) => `https://player.vidsrc.nl/embed/movie/${id}`,
+(id: string) => `https://vidsrc.rip/embed/movie/${id}`,
+(id: string) => `https://vidbinge.dev/embed/movie/${id}`,
+(id: string) => `https://moviesapi.club/movie/${id}`,
+(id: string) => `https://moviee.tv/embed/movie/${id}`,
+(id: string) => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
+(id: string) => `https://embed.su/embed/movie/${id}`,
+(id: string) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1`,
+(id: string) => `https://vidsrc.icu/embed/movie/${id}`,
+  ];
 
-  // You can switch between these options by uncommenting the desired line:
-  return <EmbedPlayer url={`https://embed.su/embed/movie/${id}`} />;
-  //return <EmbedPlayer url={`https://player.vidsrc.nl/embed/movie/${id}`} />;
-  //return <EmbedPlayer url={`https://vidsrc.cc/v2/embed/movie/${id}?autoPlay=true`} />;
-  // return <EmbedPlayer url={`https://vidsrc.me/embed/movie/${id}?autoPlay=true`} />;
+  for (const makeUrl of sources) {
+    const url = makeUrl(id);
+    try {
+      const response = await fetch(url, { method: 'GET', cache: 'no-store' });
+      if (response.status === 200) {
+        return url;
+      }
+    } catch (error) {
+      // If error (e.g. DNS fail), continue to next
+      continue;
+    }
+  }
+
+  return null;
+}
+
+export default async function Page({ params }: { params: { slug: string } }) {
+  const id = params.slug.split('-').pop()!;
+  const workingUrl = await getWorkingEmbedUrl(id);
+
+  if (!workingUrl) {
+    return (
+      <div style={{ color: 'white', textAlign: 'center', padding: '2rem' }}>
+        ❌ Sorry, we couldn’t find a working stream for this movie.
+      </div>
+    );
+  }
+
+  return <EmbedPlayer url={workingUrl} />;
 }
