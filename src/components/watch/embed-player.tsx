@@ -1,32 +1,29 @@
 'use client';
+
 import React from 'react';
 
 interface EmbedPlayerProps {
   url: string;
 }
 
-function EmbedPlayer(props: EmbedPlayerProps) {
+function EmbedPlayer({ url }: EmbedPlayerProps) {
+  const ref = React.useRef<HTMLIFrameElement>(null);
+
   React.useEffect(() => {
     if (ref.current) {
-      ref.current.src = props.url;
+      ref.current.src = url;
     }
 
-    const iframe: HTMLIFrameElement | null = ref.current;
+    const iframe = ref.current;
+    const handleIframeLoaded = () => {
+      if (iframe) iframe.style.opacity = '1';
+    };
+
     iframe?.addEventListener('load', handleIframeLoaded);
     return () => {
       iframe?.removeEventListener('load', handleIframeLoaded);
     };
-  }, []);
-
-  const ref = React.useRef<HTMLIFrameElement>(null);
-
-  const handleIframeLoaded = () => {
-    if (!ref.current) {
-      return;
-    }
-    const iframe: HTMLIFrameElement = ref.current;
-    if (iframe) iframe.style.opacity = '1';
-  };
+  }, [url]);
 
   return (
     <div
