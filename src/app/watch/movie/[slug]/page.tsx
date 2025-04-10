@@ -67,7 +67,7 @@ export const revalidate = 3600;
 
 async function getWorkingEmbedUrl(id: string): Promise<string | null> {
   try {
-    const res = await fetch(`https://streamverse-providers.onrender.com/api/embed/${id}`, {
+    const res = await fetch(`https://streamverse-providers-17iy.onrender.com/api/embed/${id}`, {
       cache: 'no-store',
     });
 
