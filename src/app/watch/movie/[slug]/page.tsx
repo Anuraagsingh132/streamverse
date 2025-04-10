@@ -1,4 +1,4 @@
-import React from 'react';
+/*import React from 'react';
 import EmbedPlayer from '@/components/watch/embed-player';
 
 export const revalidate = 3600;
@@ -9,7 +9,7 @@ async function getWorkingEmbedUrl(id: string): Promise<string | null> {
     (id: string) => `https://flicky.host/embed/movie/?id=${id}`,
     (id: string) => `https://vidlink.pro/movie/${id}`,
     (id: string) => `https://vidsrc.su/embed/movie/${id}`,
-    //(id: string) => `https://vidbinge.dev/embed/movie/${id}`,*/
+    //(id: string) => `https://vidbinge.dev/embed/movie/${id}`,
 
     
 (id: string) => `https://embed.su/embed/movie/${id}`,
@@ -40,6 +40,54 @@ async function getWorkingEmbedUrl(id: string): Promise<string | null> {
       // If error (e.g. DNS fail), continue to next
       continue;
     }
+  }
+
+  return null;
+}
+
+export default async function Page({ params }: { params: { slug: string } }) {
+  const id = params.slug.split('-').pop()!;
+  const workingUrl = await getWorkingEmbedUrl(id);
+
+  if (!workingUrl) {
+    return (
+      <div style={{ color: 'white', textAlign: 'center', padding: '2rem' }}>
+        ❌ Sorry, we couldn’t find a working stream for this movie.
+      </div>
+    );
+  }
+
+  return <EmbedPlayer url={workingUrl} />;
+}
+*/
+import React from 'react';
+import EmbedPlayer from '@/components/watch/embed-player';
+
+export const revalidate = 3600;
+
+async function getWorkingEmbedUrl(id: string): Promise<string | null> {
+  const primarySource = (id: string) => `https://embed.su/embed/movie/${id}`;
+  const fallbackSource = (id: string) => `https://vidsrc.vip/embed/movie/${id}`;
+
+  const primaryUrl = primarySource(id);
+  try {
+    const response = await fetch(primaryUrl, { method: 'GET', cache: 'no-store' });
+    if (response.status === 200) {
+      return primaryUrl;
+    }
+  } catch (error) {
+    // If embed.su fails, go to fallback
+  }
+
+  // Fallback
+  const fallbackUrl = fallbackSource(id);
+  try {
+    const response = await fetch(fallbackUrl, { method: 'GET', cache: 'no-store' });
+    if (response.status === 200) {
+      return fallbackUrl;
+    }
+  } catch (error) {
+    // If even fallback fails, return null
   }
 
   return null;
