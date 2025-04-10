@@ -66,28 +66,31 @@ import EmbedPlayer from '@/components/watch/embed-player';
 export const revalidate = 3600;
 
 async function getWorkingEmbedUrl(id: string): Promise<string | null> {
-  const primarySource = (id: string) => `https://embed.su/embed/movie/${id}`;
-  const fallbackSource = (id: string) => `https://vidsrc.vip/embed/movie/${id}`;
+  const primaryUrl = `https://embed.su/embed/movie/${id}`;
+  const fallbackUrl = `https://vidsrc.vip/embed/movie/${id}`;
 
-  const primaryUrl = primarySource(id);
   try {
     const response = await fetch(primaryUrl, { method: 'GET', cache: 'no-store' });
-    if (response.status === 200) {
-      return primaryUrl;
+
+    if (response.ok) {
+      const text = await response.text();
+      // Check that it's not an error or empty/short HTML
+      if (!text.toLowerCase().includes('error') && text.length > 500) {
+        return primaryUrl;
+      }
     }
-  } catch (error) {
-    // If embed.su fails, go to fallback
+  } catch (err) {
+    // Ignored, fallback will be tried
   }
 
-  // Fallback
-  const fallbackUrl = fallbackSource(id);
   try {
-    const response = await fetch(fallbackUrl, { method: 'GET', cache: 'no-store' });
-    if (response.status === 200) {
+    const fallbackResponse = await fetch(fallbackUrl, { method: 'GET', cache: 'no-store' });
+
+    if (fallbackResponse.ok) {
       return fallbackUrl;
     }
-  } catch (error) {
-    // If even fallback fails, return null
+  } catch (err) {
+    // Both primary and fallback failed
   }
 
   return null;
