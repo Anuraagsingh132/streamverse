@@ -66,31 +66,17 @@ import EmbedPlayer from '@/components/watch/embed-player';
 export const revalidate = 3600;
 
 async function getWorkingEmbedUrl(id: string): Promise<string | null> {
-  const primaryUrl = `https://embed.su/embed/movie/${id}`;
-  const fallbackUrl = `https://vidsrc.vip/embed/movie/${id}`;
-
   try {
-    const response = await fetch(primaryUrl, { method: 'GET', cache: 'no-store' });
+    const res = await fetch(`https://streamverse-providers.onrender.com/api/embed/${id}`, {
+      cache: 'no-store',
+    });
 
-    if (response.ok) {
-      const text = await response.text();
-      // Check that it's not an error or empty/short HTML
-      if (!text.toLowerCase().includes('error') && text.length > 500) {
-        return primaryUrl;
-      }
+    if (res.ok) {
+      const data = await res.json();
+      return data.url || null;
     }
   } catch (err) {
-    // Ignored, fallback will be tried
-  }
-
-  try {
-    const fallbackResponse = await fetch(fallbackUrl, { method: 'GET', cache: 'no-store' });
-
-    if (fallbackResponse.ok) {
-      return fallbackUrl;
-    }
-  } catch (err) {
-    // Both primary and fallback failed
+    console.error('❌ Failed to fetch embed URL from server:', err);
   }
 
   return null;
