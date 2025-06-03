@@ -20,7 +20,6 @@ const fontSans = FontSans({
   display: 'swap',
 });
 
-// Font files can be colocated inside of `pages`
 const fontHeading = localFont({
   src: '../assets/fonts/CalSans-SemiBold.woff2',
   variable: '--font-heading',
@@ -77,17 +76,27 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* Popunder Ad Script */}
+        <Script
+          id="popunder-ad"
+          strategy="beforeInteractive"
+          src="//pl24530115.profitableratecpm.com/23/5a/d6/235ad6b2de46117f95b93785b3b0198b.js"
+        />
+      </head>
       <body
         className={cn(
           'overlflow-y-auto min-h-screen overflow-x-hidden bg-background font-sans antialiased',
           fontSans.variable,
           fontHeading.variable,
-        )}>
+        )}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
-          disableTransitionOnChange>
+          disableTransitionOnChange
+        >
           {/* <TrpcProvider> */}
           {children}
           <TailwindIndicator />
@@ -102,11 +111,11 @@ export default function RootLayout({
                 id="_next-ga-init"
                 dangerouslySetInnerHTML={{
                   __html: `
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){window.dataLayer.push(arguments);}
-          gtag('js', new Date());
-
-          gtag('config', '${env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID}', { cookie_flags: 'max-age=86400;secure;samesite=none' });`,
+                    window.dataLayer = window.dataLayer || [];
+                    function gtag(){window.dataLayer.push(arguments);}
+                    gtag('js', new Date());
+                    gtag('config', '${env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID}', { cookie_flags: 'max-age=86400;secure;samesite=none' });
+                  `,
                 }}
               />
               <Script
@@ -121,10 +130,10 @@ export default function RootLayout({
             id="statcounter"
             dangerouslySetInnerHTML={{
               __html: `
-    var sc_project=13061182; 
-    var sc_invisible=1; 
-    var sc_security="78c4c774"; 
-    `,
+                var sc_project=13061182; 
+                var sc_invisible=1; 
+                var sc_security="78c4c774"; 
+              `,
             }}
           />
           <Script
@@ -149,15 +158,12 @@ export default function RootLayout({
             </div>
           </noscript>
 
-                  
-          
-
           {/* Umami Analytics */}
-          <script
+          <Script
             defer
             src="https://cloud.umami.is/script.js"
             data-website-id="f442e6bb-9667-4262-9abd-73a77381c170"
-          ></script>
+          />
         </ThemeProvider>
       </body>
     </html>
