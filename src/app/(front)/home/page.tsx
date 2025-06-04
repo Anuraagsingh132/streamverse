@@ -180,14 +180,56 @@ export default async function Home() {
   ];
 
   const allShows = await MovieService.getShows(requests);
-  const randomShow: Show | null = getRandomShow(allShows);
+  
+
+  const MAX_HERO_ITEMS = 5;
+  const featuredShowsForHero: Show[] = [];
+
+  for (const category of allShows) {
+    if (category && category.shows && category.shows.length > 0) {
+      for (const show of category.shows) {
+        if (featuredShowsForHero.length >= MAX_HERO_ITEMS) break;
+        if (show && show.backdrop_path && !featuredShowsForHero.find(s => s.id === show.id)) {
+          featuredShowsForHero.push(show);
+        }
+      }
+    }
+    if (featuredShowsForHero.length >= MAX_HERO_ITEMS) break;
+  }
+
+  // Fallback: If still not enough, try to pick from any show with a backdrop, even if it means less diversity initially.
+  if (featuredShowsForHero.length < MAX_HERO_ITEMS) {
+    for (const category of allShows) {
+      if (category && category.shows) {
+        for (const show of category.shows) {
+          if (featuredShowsForHero.length >= MAX_HERO_ITEMS) break;
+          if (show && show.backdrop_path && !featuredShowsForHero.find(s => s.id === show.id)) {
+            featuredShowsForHero.push(show);
+          }
+        }
+      }
+      if (featuredShowsForHero.length >= MAX_HERO_ITEMS) break;
+    }
+  }
+
+  // If still no shows for hero (e.g. allShows was empty or no backdrop_paths), pass an empty array or a default
+  // For now, we'll pass what we have, Hero component should handle empty array.
+
+  // Fetch video keys for hero shows
+  const featuredShowsWithVideoKeys = await Promise.all(
+    featuredShowsForHero.map(async (show) => {
+      const videoKey = await MovieService.getShowHeroVideoKey(show.id, show.media_type);
+      return { ...show, heroVideoKey: videoKey };
+    })
+  );
 
   return (
     <>
       <h1 className="hidden">{h1}</h1>
-      <Hero randomShow={randomShow} />
+      <Hero featuredShows={featuredShowsWithVideoKeys} />
       <RecentlyStartedCarousel />
       <ShowsContainer shows={allShows} />
     </>
   );
+
 }

@@ -52,6 +52,7 @@ export type Show = {
   vote_count: number;
   original_name?: string;
   seasons?: SeasonDetail[]; // Added for TV shows
+  heroVideoKey?: string; // For hero section video background
 };
 
 export type KeyWord = {

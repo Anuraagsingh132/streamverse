@@ -79,6 +79,28 @@ class MovieService extends BaseService {
     return Promise.resolve(response.data);
   });
 
+  static async getShowHeroVideoKey(showId: number, mediaType: MediaType): Promise<string | undefined> {
+    try {
+      const showData = await this.findMovieByIdAndType(showId, mediaType);
+      if (showData && showData.videos && showData.videos.results) {
+        const officialTrailer = showData.videos.results.find(
+          (video) => video.official && video.type === 'Trailer' && video.site === 'YouTube'
+        );
+        if (officialTrailer) {
+          return officialTrailer.key;
+        }
+        // Fallback: if no official trailer, find any YouTube trailer
+        const anyTrailer = showData.videos.results.find(
+          (video) => video.type === 'Trailer' && video.site === 'YouTube'
+        );
+        return anyTrailer?.key;
+      }
+    } catch (error) {
+      console.error(`Error fetching video key for ${mediaType} ID ${showId}:`, error);
+    }
+    return undefined;
+  }
+
   static urlBuilder(req: TmdbRequest) {
     switch (req.requestType) {
       case RequestType.TRENDING:

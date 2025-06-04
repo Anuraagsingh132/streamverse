@@ -12,6 +12,7 @@ export interface WatchedItem extends Show {
 
 const RECENTS_KEY = 'streamverse-recents';
 const MAX_RECENTS = 20;
+const DONATION_APPEAL_SEEN_KEY = 'streamverse-donation-appeal-seen';
 
 export const getRecents = (): WatchedItem[] => {
   if (typeof window === 'undefined') return [];
@@ -60,4 +61,15 @@ export const saveRecent = (item: Show, progress?: { currentTime: number; duratio
   } catch (error) {
     console.error('Error saving recent to localStorage:', error);
   }
+};
+
+export const getDonationAppealSeen = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const seen = localStorage.getItem(DONATION_APPEAL_SEEN_KEY);
+  return seen === 'true';
+};
+
+export const setDonationAppealSeen = (value: boolean): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(DONATION_APPEAL_SEEN_KEY, String(value));
 };
