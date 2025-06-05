@@ -376,7 +376,7 @@ const ShowModal = () => {
                       className="mr-1.5 h-6 w-6 fill-current"
                       aria-hidden="true"
                     />
-                    {modalStore.show?.media_type === MediaType.MOVIE ? (trailer ? 'Play Trailer' : 'Watch Now') : 'Start Watching'}
+                    {modalStore.show?.media_type === MediaType.MOVIE ? (trailer ? 'Start Watching' : 'Watch Now') : 'Start Watching'}
                   </>
                 </Button>
               </Link>
