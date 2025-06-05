@@ -7,8 +7,11 @@ interface ModalState {
   firstLoad: boolean;
   show: Show | null;
   setShow: (show: Show | null) => void;
+  openModal: (show: Show) => void;
   play: boolean;
   setPlay: (play: boolean) => void;
+  currentlyPlayingEpisodeId: number | null;
+  setCurrentlyPlayingEpisodeId: (episodeId: number | null) => void;
   reset: () => void;
 }
 
@@ -19,13 +22,17 @@ export const useModalStore = create<ModalState>()((set) => ({
   setFirstLoad: (firstLoad: boolean) => set(() => ({ firstLoad })),
   show: null,
   setShow: (show: Show | null) => set(() => ({ show })),
+  openModal: (show: Show) => set(() => ({ show, open: true, firstLoad: true })),
   play: false,
   setPlay: (play: boolean) => set(() => ({ play })),
+  currentlyPlayingEpisodeId: null,
+  setCurrentlyPlayingEpisodeId: (episodeId) => set(() => ({ currentlyPlayingEpisodeId: episodeId })),
   reset: () =>
     set(() => ({
       show: null,
       open: false,
       play: false,
       firstLoad: false,
+      currentlyPlayingEpisodeId: null,
     })),
 }));

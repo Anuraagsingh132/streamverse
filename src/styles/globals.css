@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
 html,
 body,
 :root {
@@ -16,8 +31,32 @@ body,
   .no-scrollbar {
     -ms-overflow-style: none;
     /* IE and Edge */
-    scrollbar-width: none;
-    /* Firefox */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  .horizontal-scroll-fade {
+    position: relative;
+  }
+
+  .horizontal-scroll-fade::before,
+  .horizontal-scroll-fade::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50px; /* Width of the fade effect */
+    pointer-events: none; /* Allow clicks to pass through */
+    z-index: 10;
+  }
+
+  .horizontal-scroll-fade::before {
+    left: 0;
+    background: linear-gradient(to right, hsl(222 47% 11%), transparent);
+  }
+
+  .horizontal-scroll-fade::after {
+    right: 0;
+    background: linear-gradient(to left, hsl(222 47% 11%), transparent);
   }
 }
 

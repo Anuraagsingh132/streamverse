@@ -1,5 +1,4 @@
 import {
-  ImageIcon,
   Instagram,
   type LucideProps,
   UserCircle,
@@ -13,6 +12,12 @@ import {
   Pause,
   VolumeX,
   Volume2,
+  AlertCircle, // Added for error/warning messages
+  ImageIcon, // Keep one instance
+  Share2, // For Share action
+  Plus, // For Add to Watchlist action
+  ThumbsUp, // For Like action
+  ThumbsDown, // For Dislike action
 } from "lucide-react";
 
 type IconProps = LucideProps;
@@ -20,6 +25,9 @@ type IconProps = LucideProps;
 import { Check, Copy as LucideCopy } from 'lucide-react';
 
 export const Icons = {
+  user: UserCircle,
+  image: ImageIcon, // Added for placeholder user images
+  alertCircle: AlertCircle, // Added for error/warning messages
   chevronLeft: ChevronLeft,
   chevronRight: ChevronRight,
   info: Info,
@@ -27,6 +35,10 @@ export const Icons = {
   close: X,
   copy: LucideCopy,
   check: Check,
+  share: Share2,
+  plus: Plus,
+  thumbsUp: ThumbsUp,
+  thumbsDown: ThumbsDown,
   play: PlayIcon,
   pause: Pause,
   volume: Volume2,

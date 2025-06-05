@@ -21,6 +21,39 @@ export type NavItem = {
   onClick?: () => void;
 };
 
+// Nested types for Show details
+export type SpokenLanguage = {
+  english_name: string;
+  iso_639_1: string;
+  name: string;
+};
+
+export type ProductionCompany = {
+  id: number;
+  logo_path: string | null;
+  name: string;
+  origin_country: string;
+};
+
+export type ProductionCountry = {
+  iso_3166_1: string;
+  name: string;
+};
+
+// Simplified episode type for last/next episode to air
+export type SimpleEpisode = {
+  air_date: string;
+  episode_number: number;
+  id: number;
+  name: string;
+  overview: string;
+  production_code: string;
+  season_number: number;
+  still_path: string | null;
+  vote_average: number;
+  vote_count: number;
+};
+
 export type Show = {
   adult: boolean;
   backdrop_path: string | null;
@@ -53,6 +86,14 @@ export type Show = {
   original_name?: string;
   seasons?: SeasonDetail[]; // Added for TV shows
   heroVideoKey?: string; // For hero section video background
+  // Fields for ShowDetailsTab
+  spoken_languages?: SpokenLanguage[];
+  production_companies?: ProductionCompany[];
+  production_countries?: ProductionCountry[];
+  type?: string; // For TV shows: e.g., "Scripted", "Reality"
+  last_episode_to_air?: SimpleEpisode | null;
+  next_episode_to_air?: SimpleEpisode | null;
+  content_rating?: string; // e.g., 'PG-13', 'TV-MA'
 };
 
 export type KeyWord = {
@@ -133,4 +174,46 @@ export type Episode = {
 
 export type SeasonWithEpisodesResponse = SeasonDetail & {
   episodes: Episode[];
+};
+
+export type CastMember = {
+  adult: boolean;
+  gender: number | null;
+  id: number;
+  known_for_department: string;
+  name: string;
+  original_name: string;
+  popularity: number;
+  profile_path: string | null;
+  cast_id?: number; // For movie cast
+  character?: string;
+  credit_id: string;
+  order?: number;
+};
+
+export type CrewMember = {
+  adult: boolean;
+  gender: number | null;
+  id: number;
+  known_for_department: string;
+  name: string;
+  original_name: string;
+  popularity: number;
+  profile_path: string | null;
+  credit_id: string;
+  department?: string;
+  job?: string;
+};
+
+export type CreditsResponse = {
+  id: number; // ID of the movie or TV show
+  cast: CastMember[];
+  crew: CrewMember[];
+};
+
+export type PaginatedShowResponse = {
+  page: number;
+  results: Show[];
+  total_pages: number;
+  total_results: number;
 };
