@@ -14,7 +14,7 @@ export default function Page({ params }: { params: { slug: string } }) {
   const episode = searchParams.get('episode') || '1';
 
   // Construct the embed URL dynamically
-  const embedUrl = `https://embed.su/embed/tv/${id}/${season}/${episode}`;
+  //const embedUrl = `https://embed.su/embed/tv/${id}/${season}/${episode}`;
   const embedUrl = `https://vidsrc.su/tv/${id}/${season}/${episode}?autoplay=true&colour=O0ff9d&autonextepisode=true';
   
   // const embedUrl = `https://vidbinge.dev/embed/tv/${id}/${season}/${episode}`;
