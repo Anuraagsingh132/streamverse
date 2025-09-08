@@ -25,3 +25,4 @@ export default function Page({ params }: { params: { slug: string } }) {
 
   return <EmbedPlayer url={embedUrl} />;
 }
+
