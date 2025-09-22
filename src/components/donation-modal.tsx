@@ -113,7 +113,7 @@ const DonationModal: React.FC<DonationModalProps> = ({ isOpen, onClose, upiId })
             ⚠️ <span className="font-semibold">Heads up!</span> Our domain is expiring soon.
             <br />
             <br />
-            Please save our new homes:
+            Bookmark these till we get a new domain:
             <br />
             <a href="https://streamverse-vit.netlify.app" target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 underline block mt-1">
               streamverse-vit.netlify.app
