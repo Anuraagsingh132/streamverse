@@ -12,7 +12,7 @@ interface DonationModalProps {
 
 // Define the expiration date outside of the component so it doesn't get redefined on every render.
 // IMPORTANT: Replace this with your actual expiration date.
-const EXPIRATION_DATE = new Date('2025-10-26T23:59:59');
+const EXPIRATION_DATE = new Date('2025-9-27T23:59:59');
 
 const DonationModal: React.FC<DonationModalProps> = ({ isOpen, onClose, upiId }) => {
   const [isCopied, setIsCopied] = useState(false);
