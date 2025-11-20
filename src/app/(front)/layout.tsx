@@ -12,28 +12,28 @@ import {
 } from '@/lib/localStorageUtils';
 
 const FrontLayout = ({ children }: { children: React.ReactNode }) => {
-  const { isDonationModalOpen, openDonationModal, closeDonationModal } = useDonationModalStore();
-  const upiIdFromEnv = process.env.NEXT_PUBLIC_UPI_ID || 'your-default-upi-id@example'; // Fallback UPI ID
+  // const { isDonationModalOpen, openDonationModal, closeDonationModal } = useDonationModalStore();
+  // const upiIdFromEnv = process.env.NEXT_PUBLIC_UPI_ID || 'your-default-upi-id@example'; // Fallback UPI ID
 
-  useEffect(() => {
-    // Always open the donation modal on component mount
-    openDonationModal();
-  }, [openDonationModal]);
+  // useEffect(() => {
+  //   // Always open the donation modal on component mount
+  //   openDonationModal();
+  // }, [openDonationModal]);
 
-  const handleCloseModal = () => {
-    closeDonationModal();
-    setDonationAppealSeen(true);
-  };
+  // const handleCloseModal = () => {
+  //   closeDonationModal();
+  //   setDonationAppealSeen(true);
+  // };
   return (
     <>
-      <DonationModal isOpen={isDonationModalOpen} onClose={handleCloseModal} upiId={upiIdFromEnv} />
+      {/* <DonationModal isOpen={isDonationModalOpen} onClose={handleCloseModal} upiId={upiIdFromEnv} /> */}
       <div className={cn('min-h-screen flex flex-col', {
-        'blur-sm brightness-75 transition-all duration-300 ease-in-out': isDonationModalOpen,
+        // 'blur-sm brightness-75 transition-all duration-300 ease-in-out': isDonationModalOpen,
       })}>
-      <SiteHeader />
-      <main className="flex-grow">{children}</main>
-      <SiteFooter />
-    </div>
+        <SiteHeader />
+        <main className="flex-grow">{children}</main>
+        <SiteFooter />
+      </div>
     </>
   );
 };
