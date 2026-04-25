@@ -7,7 +7,7 @@ import type {
   ShowWithGenreAndVideo,
   SeasonWithEpisodesResponse,
 } from '@/types';
-import { type AxiosResponse } from 'axios';
+
 import BaseService from '../BaseService/BaseService';
 import {
   RequestType,
@@ -36,7 +36,7 @@ class MovieService extends BaseService {
     const response = data
       .filter(this.isFulfilled)
       .map(
-        (item: PromiseFulfilledResult<AxiosResponse<Show>>) => item.value?.data,
+        (item: PromiseFulfilledResult<{ data: Show }>) => item.value?.data,
       )
       .filter((item: Show) => {
         return pathname.includes(getSlug(item.id, getNameFromShow(item)));
@@ -48,15 +48,16 @@ class MovieService extends BaseService {
   }
 
   static findMovie = cache(async (id: number) => {
-    return this.axios(BASE_URL).get<Show>(`/movie/${id}`);
+    return this.fetch<Show>(BASE_URL, `/movie/${id}`);
   });
 
   static findTvSeries = cache(async (id: number) => {
-    return this.axios(BASE_URL).get<Show>(`/tv/${id}`);
+    return this.fetch<Show>(BASE_URL, `/tv/${id}`);
   });
 
   static getTvSeasonDetails = cache(async (tvId: number, seasonNumber: number) => {
-    return this.axios(BASE_URL).get<SeasonWithEpisodesResponse>(
+    return this.fetch<SeasonWithEpisodesResponse>(
+      BASE_URL,
       `/tv/${tvId}/season/${seasonNumber}`,
     );
   });
@@ -64,18 +65,19 @@ class MovieService extends BaseService {
   static async getKeywords(
     id: number,
     type: 'tv' | 'movie',
-  ): Promise<AxiosResponse<KeyWordResponse>> {
-    return this.axios(BASE_URL).get<KeyWordResponse>(`/${type}/${id}/keywords`);
+  ): Promise<{ data: KeyWordResponse }> {
+    return this.fetch<KeyWordResponse>(BASE_URL, `/${type}/${id}/keywords`);
   }
 
   static findMovieByIdAndType = cache(async (id: number, type: string) => {
-    const params: Record<string, string> = {
+    const params = new URLSearchParams({
       language: 'en-US',
       append_to_response: 'videos',
-    };
-    const response: AxiosResponse<ShowWithGenreAndVideo> = await this.axios(
+    });
+    const response = await this.fetch<ShowWithGenreAndVideo>(
       BASE_URL,
-    ).get<ShowWithGenreAndVideo>(`/${type}/${id}`, { params });
+      `/${type}/${id}?${params.toString()}`
+    );
     return Promise.resolve(response.data);
   });
 
@@ -145,7 +147,7 @@ class MovieService extends BaseService {
     mediaType: MediaType;
     page?: number;
   }) {
-    return this.axios(BASE_URL).get<TmdbPagingResponse>(this.urlBuilder(req));
+    return this.fetch<TmdbPagingResponse>(BASE_URL, this.urlBuilder(req));
   }
 
   static getShows = cache(async (requests: ShowRequest[]) => {
@@ -183,7 +185,8 @@ class MovieService extends BaseService {
   });
 
   static searchMovies = cache(async (query: string, page?: number) => {
-    const { data } = await this.axios(BASE_URL).get<TmdbPagingResponse>(
+    const { data } = await this.fetch<TmdbPagingResponse>(
+      BASE_URL,
       `/search/multi?query=${encodeURIComponent(query)}&language=en-US&page=${
         page ?? 1
       }`,

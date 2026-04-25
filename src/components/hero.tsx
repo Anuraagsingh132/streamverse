@@ -8,6 +8,7 @@ import { useSearchStore } from '@/stores/search';
 import { MediaType, type Show } from '@/types';
 import { type AxiosResponse } from 'axios';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import React from 'react';
 import CustomImage from './custom-image';
 
@@ -35,49 +36,7 @@ const Hero = ({ featuredShows }: HeroProps) => {
     return () => clearTimeout(timer);
   }, [currentIndex, featuredShows]); // Depend on featuredShows directly
 
-  // The popstate event handler for modal restoration can remain largely the same,
-  // as it's triggered by URL changes when a modal is opened, not by hero slide changes.
-
-  React.useEffect(() => {
-    window.addEventListener('popstate', handlePopstateEvent, false);
-    return () => {
-      window.removeEventListener('popstate', handlePopstateEvent, false);
-    };
-  }, []);
-
-  const handlePopstateEvent = () => {
-    const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
-
-    if (typeof pathname !== 'string') {
-      console.error('Hero: pathname is not a string or is unexpectedly undefined/null after initial assignment:', pathname);
-      modalStore.reset(); // Optional: reset modal state or handle error appropriately
-      return; 
-    }
-    if (!/\d/.test(pathname)) {
-      modalStore.reset();
-    } else if (/\d/.test(pathname)) {
-      const movieId: number = getIdFromSlug(pathname);
-      if (!movieId) {
-        return;
-      }
-      const findMovie: Promise<AxiosResponse<Show>> = pathname.includes(
-        '/tv-shows',
-      )
-        ? MovieService.findTvSeries(movieId)
-        : MovieService.findMovie(movieId);
-      findMovie
-        .then((response: AxiosResponse<Show>) => {
-          const { data } = response;
-          useModalStore.setState({ show: data, open: true, play: true });
-        })
-        .catch((error) => {
-          console.log(`findMovie: `, error);
-        });
-    }
-  };
-
-
-
+  const router = useRouter();
   const queryIsValid = searchStore && typeof searchStore.query === 'string';
   const hasActiveSearch = queryIsValid && searchStore.query.length > 0;
   
@@ -151,8 +110,10 @@ const Hero = ({ featuredShows }: HeroProps) => {
                     variant="outline"
                     className="h-auto flex-shrink-0 gap-2 rounded-xl"
                     onClick={() => {
-                      modalStore.setShow(currentShow);
-                      modalStore.setOpen(true);
+                      const searchParams = new URLSearchParams(window.location.search);
+                      searchParams.set('modal', currentShow.id.toString());
+                      searchParams.set('type', currentShow.media_type);
+                      router.push(`?${searchParams.toString()}`, { scroll: false });
                       modalStore.setPlay(true);
                     }}
                   >

@@ -6,6 +6,8 @@ import { useModalStore } from '@/stores/modal';
 import MovieService from '@/services/MovieService'; // To fetch full details of clicked item
 import { getYear } from '@/lib/utils'; // For displaying year
 
+import { useRouter } from 'next/navigation';
+
 interface ShowMoreLikeThisTabProps {
   showId: number;
   mediaType: MediaType.TV | MediaType.MOVIE;
@@ -16,6 +18,7 @@ const ShowMoreLikeThisTab: React.FC<ShowMoreLikeThisTabProps> = ({ showId, media
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const modalStore = useModalStore();
+  const router = useRouter();
 
   useEffect(() => {
     if (!showId || !mediaType) return;
@@ -43,18 +46,12 @@ const ShowMoreLikeThisTab: React.FC<ShowMoreLikeThisTabProps> = ({ showId, media
 
   const handleRecommendationClick = async (item: Show) => {
     try {
-      // Fetch full details for the clicked recommendation
-      // The item from recommendations might not be complete
-      const fullShowDetails = await MovieService.findMovieByIdAndType(item.id, item.media_type);
-      if (fullShowDetails) {
-        modalStore.openModal(fullShowDetails);
-      } else {
-        console.error('Failed to fetch full details for recommended item:', item.id);
-        // Optionally show a user-facing error here
-      }
+      const searchParams = new URLSearchParams(window.location.search);
+      searchParams.set('modal', item.id.toString());
+      searchParams.set('type', item.media_type);
+      router.push(`?${searchParams.toString()}`, { scroll: false });
     } catch (clickError) {
       console.error('Error handling recommendation click:', clickError);
-      // Optionally show a user-facing error here
     }
   };
 

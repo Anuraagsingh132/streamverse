@@ -55,12 +55,18 @@ export function DebouncedInput({
     };
   }, []);
 
-  const debounceInput = React.useCallback(
-    debounce((value) => {
+  const onChangeRef = React.useRef(onChange);
+
+  React.useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  const debounceInput = React.useMemo(
+    () => debounce((value) => {
       const strValue = value as string;
-      void onChange(strValue);
+      void onChangeRef.current(strValue);
     }, debounceTimeout),
-    [],
+    [debounceTimeout],
   );
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {

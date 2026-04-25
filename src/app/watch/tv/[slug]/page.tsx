@@ -4,8 +4,6 @@ import React from 'react';
 import EmbedPlayer from '@/components/watch/embed-player';
 import { useSearchParams } from 'next/navigation';
 
-// ✅ Prevents Vercel from doing per-request SSR
-export const dynamic = 'force-static';
 
 export default function Page({ params }: { params: { slug: string } }) {
   const searchParams = useSearchParams();

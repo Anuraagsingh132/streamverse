@@ -17,8 +17,9 @@ import {
   type ShowWithGenreAndVideo,
   type VideoResult,
 } from '@/types';
+import { type Show } from '@/types';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import * as React from 'react';
 import Youtube from 'react-youtube';
 import CustomImage from './custom-image';
@@ -36,14 +37,11 @@ type YouTubeEvent = {
   target: YouTubePlayer;
 };
 
-const userAgent =
-  typeof navigator === 'undefined' ? 'SSR' : navigator.userAgent;
-const { isMobile } = getMobileDetect(userAgent);
 const defaultOptions: Record<string, object> = {
   playerVars: {
     // https://developers.google.com/youtube/player_parameters
     rel: 0,
-    mute: isMobile() ? 1 : 0,
+    mute: 0,
     loop: 1,
     autoplay: 1,
     controls: 0,
@@ -56,26 +54,43 @@ const defaultOptions: Record<string, object> = {
   },
 };
 
-const ShowModal = () => {
+interface ShowModalProps {
+  show: Show;
+}
+
+const ShowModal = ({ show: showProp }: ShowModalProps) => {
   // stores
   const modalStore = useModalStore();
-  const IS_MOBILE: boolean = isMobile();
+  const router = useRouter();
+  const IS_MOBILE: boolean = React.useMemo(() => {
+    if (typeof navigator === 'undefined') return false;
+    const { isMobile } = getMobileDetect(navigator.userAgent);
+    return isMobile();
+  }, []);
 
   const [trailer, setTrailer] = React.useState('');
   const [isPlaying, setPlaying] = React.useState(true);
   const [genres, setGenres] = React.useState<Genre[]>([]);
-  const [isMuted, setIsMuted] = React.useState<boolean>(
-    modalStore.firstLoad || IS_MOBILE,
-  );
+  const [isMuted, setIsMuted] = React.useState<boolean>(IS_MOBILE);
   const [options, setOptions] =
     React.useState<Record<string, object>>(defaultOptions);
+  const [showTrailer, setShowTrailer] = React.useState(false);
+
+  React.useEffect(() => {
+    if (trailer) {
+      const timer = setTimeout(() => setShowTrailer(true), 300); // Delay for modal animation
+      return () => clearTimeout(timer);
+    } else {
+      setShowTrailer(false);
+    }
+  }, [trailer]);
 
   const youtubeRef = React.useRef(null);
   const imageRef = React.useRef<HTMLImageElement>(null);
 
   // get trailer and genres of show
   React.useEffect(() => {
-    if (modalStore.firstLoad || IS_MOBILE) {
+    if (IS_MOBILE) {
       setOptions((state: Record<string, object>) => ({
         ...state,
         playerVars: { ...state.playerVars, mute: 1 },
@@ -85,9 +100,9 @@ const ShowModal = () => {
   }, []);
 
   const handleGetData = async () => {
-    const id: number | undefined = modalStore.show?.id;
+    const id: number | undefined = showProp?.id;
     const type: string =
-      modalStore.show?.media_type === MediaType.TV ? 'tv' : 'movie';
+      showProp?.media_type === MediaType.TV ? 'tv' : 'movie';
     if (!id || !type) {
       return;
     }
@@ -109,11 +124,12 @@ const ShowModal = () => {
 
   const handleCloseModal = () => {
     modalStore.reset();
-    if (!modalStore.show || modalStore.firstLoad) {
-      window.history.pushState(null, '', '/home');
-    } else {
-      window.history.back();
-    }
+    const newSearchParams = new URLSearchParams(window.location.search);
+    newSearchParams.delete('modal');
+    newSearchParams.delete('type');
+    const searchStr = newSearchParams.toString();
+    const newUrl = searchStr ? `?${searchStr}` : window.location.pathname;
+    router.push(newUrl, { scroll: false });
   };
 
   const onEnd = (event: YouTubeEvent) => {
@@ -148,7 +164,7 @@ const ShowModal = () => {
 
   return (
     <Dialog
-      open={modalStore.open}
+      open={true}
       onOpenChange={handleCloseModal}
       aria-label="Modal containing show's details">
       <DialogContent className="w-full overflow-hidden rounded-md bg-zinc-900 p-0 text-left align-middle shadow-xl dark:bg-zinc-900 sm:max-w-3xl lg:max-w-4xl">
@@ -157,12 +173,12 @@ const ShowModal = () => {
             fill
             priority
             ref={imageRef}
-            alt={modalStore?.show?.title ?? 'poster'}
+            alt={showProp?.title ?? 'poster'}
             className="-z-40 z-[1] h-auto w-full object-cover"
-            src={`https://image.tmdb.org/t/p/original${modalStore.show?.backdrop_path}`}
+            src={`https://image.tmdb.org/t/p/original${showProp?.backdrop_path}`}
             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 100vw, 33vw"
           />
-          {trailer && (
+          {showTrailer && trailer && (
             <Youtube
               opts={options}
               onEnd={onEnd}
@@ -172,8 +188,8 @@ const ShowModal = () => {
               videoId={trailer}
               id="video-trailer"
               title={
-                modalStore.show?.title ??
-                modalStore.show?.name ??
+                showProp?.title ??
+                showProp?.name ??
                 'video-trailer'
               }
               className="relative aspect-video w-full"
@@ -184,7 +200,7 @@ const ShowModal = () => {
           <div className="absolute bottom-6 z-20 flex w-full items-center justify-between gap-2 px-10">
             <div className="flex items-center gap-2.5">
               <Link
-                href={`/watch/${modalStore.show?.media_type === MediaType.MOVIE ? 'movie' : 'tv'}/${modalStore.show?.id}`}>
+                href={`/watch/${showProp?.media_type === MediaType.MOVIE ? 'movie' : 'tv'}/${showProp?.id}`}>
                 <Button
                   aria-label={`${isPlaying ? 'Pause' : 'Play'} show`}
                   className="group h-auto rounded py-1.5">
@@ -213,26 +229,26 @@ const ShowModal = () => {
         </div>
         <div className="grid gap-2.5 px-10 pb-10">
           <DialogTitle className="text-lg font-medium leading-6 text-slate-50 sm:text-xl">
-            {modalStore.show?.title ?? modalStore.show?.name}
+            {showProp?.title ?? showProp?.name}
           </DialogTitle>
           <div className="flex items-center space-x-2 text-sm sm:text-base">
             <p className="font-semibold text-green-400">
-              {Math.round((Number(modalStore.show?.vote_average) / 10) * 100) ?? '-'}
+              {Math.round((Number(showProp?.vote_average) / 10) * 100) ?? '-'}
               % Match
             </p>
-            {modalStore.show?.release_date ? (
-              <p>{getYear(modalStore.show?.release_date)}</p>
-            ) : modalStore.show?.first_air_date ? (
-              <p>{getYear(modalStore.show?.first_air_date)}</p>
+            {showProp?.release_date ? (
+              <p>{getYear(showProp?.release_date)}</p>
+            ) : showProp?.first_air_date ? (
+              <p>{getYear(showProp?.first_air_date)}</p>
             ) : null}
-            {modalStore.show?.original_language && (
+            {showProp?.original_language && (
               <span className="grid h-4 w-7 place-items-center text-xs font-bold text-neutral-400 ring-1 ring-neutral-400">
-                {modalStore.show.original_language.toUpperCase()}
+                {showProp.original_language.toUpperCase()}
               </span>
             )}
           </div>
           <DialogDescription className="line-clamp-3 text-xs text-slate-50 dark:text-slate-50 sm:text-sm">
-            {modalStore.show?.overview ?? '-'}
+            {showProp?.overview ?? '-'}
           </DialogDescription>
           <div className="flex items-center gap-2 text-xs sm:text-sm">
             <span className="text-slate-400">Genres:</span>

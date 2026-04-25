@@ -215,18 +215,10 @@ export default async function Home() {
   // If still no shows for hero (e.g. allShows was empty or no backdrop_paths), pass an empty array or a default
   // For now, we'll pass what we have, Hero component should handle empty array.
 
-  // Fetch video keys for hero shows
-  const featuredShowsWithVideoKeys = await Promise.all(
-    featuredShowsForHero.map(async (show) => {
-      const videoKey = await MovieService.getShowHeroVideoKey(show.id, show.media_type);
-      return { ...show, heroVideoKey: videoKey };
-    })
-  );
-
   return (
     <>
       <h1 className="hidden">{h1}</h1>
-      <Hero featuredShows={featuredShowsWithVideoKeys} />
+      <Hero featuredShows={featuredShowsForHero} />
       <RecentlyStartedCarousel />
       <ShowsContainer shows={allShows} />
     </>

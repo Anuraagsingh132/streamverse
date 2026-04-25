@@ -1,20 +1,12 @@
 'use client';
 
-import React, { useEffect, useState, lazy, Suspense } from 'react';
-import { useModalStore } from '@/stores/modal';
+import React from 'react';
 import type { Show } from '@/types';
-// import ShowModal from './shows-modal'; // Removed direct import
 import { ShowCard } from './shows-carousel';
 import { usePathname } from 'next/navigation';
 import { useSearchStore } from '@/stores/search';
 import ShowsSkeleton from './shows-skeleton';
 import { cn } from '@/lib/utils';
-// import { getMobileDetect } from '@/lib/utils'; // Removed as aspect ratio is now used
-
-// Lazy load modal components
-const DesktopShowModal = lazy(() => import('./shows-modal'));
-const MobileShowModal = lazy(() => import('./shows-modal-mobile'));
-const ModalSkeletonLoader = lazy(() => import('./modal-skeleton-loader')); // Import skeleton loader
 
 interface SearchedShowsProps {
   shows: Show[];
@@ -23,34 +15,10 @@ interface SearchedShowsProps {
 
 const ShowsGrid = ({ shows, query }: SearchedShowsProps) => {
   const pathname = usePathname();
-  const modalStore = useModalStore();
   const searchStore = useSearchStore();
-
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
-
-  useEffect(() => {
-    const checkDeviceType = () => {
-      if (typeof window !== 'undefined') {
-        const aspectRatio = window.innerWidth / window.innerHeight;
-        setIsMobileDevice(aspectRatio < 0.75);
-      }
-    };
-
-    checkDeviceType(); // Check on initial mount
-    window.addEventListener('resize', checkDeviceType); // Check on resize
-
-    return () => {
-      window.removeEventListener('resize', checkDeviceType); // Cleanup listener
-    };
-  }, []);
 
   return (
     <section aria-label="Grid of shows" className="container w-full max-w-none">
-      {modalStore.open && (
-        <Suspense fallback={<ModalSkeletonLoader />}>
-          {isMobileDevice ? <MobileShowModal /> : <DesktopShowModal />}
-        </Suspense>
-      )}
       <div className="main-view mt-4 min-h-[800px] pt-[5%]" id="main-view">
         {query && searchStore.loading ? (
           <ShowsSkeleton classname="pl-0" />

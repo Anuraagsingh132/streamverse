@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 // import { useMounted } from '@/hooks/use-mounted';
 // import { useModalStore } from "@/stores/modal"
 // import { useProfileStore } from "@/stores/profile"
@@ -15,7 +15,8 @@ import ShowsGrid from '@/components/shows-grid';
 // import ShowsSkeleton from '@/components/shows-skeleton';
 import { useModalStore } from '@/stores/modal';
 import React, { useEffect, useState, lazy, Suspense } from 'react'; // Added hooks and lazy/Suspense
-import { type Show } from '@/types/index';
+import { useIntersectionObserver } from '@/hooks/use-intersection-observer';
+import { type Show, MediaType } from '@/types/index';
 
 // Lazy load modal components
 const DesktopShowModal = lazy(() => import('@/components/shows-modal'));
@@ -29,14 +30,16 @@ interface ShowsContainerProps {
   shows: CategorizedShows[];
 }
 
-const ShowsContainer = ({ shows }: ShowsContainerProps) => {
-  // const mounted = useMounted();
-  const pathname = usePathname();
+const ShowsContainerInner = ({ shows }: ShowsContainerProps) => {
+  const searchParams = useSearchParams();
+  const modalParam = searchParams.get('modal');
+  const typeParam = searchParams.get('type') as MediaType | null;
 
-  const modalStore = useModalStore();
+  const modalStore = useModalStore(); // Only needed for play/currentlyPlayingEpisodeId
   const searchStore = useSearchStore();
 
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState<boolean | null>(null);
+  const [activeShow, setActiveShow] = useState<Show | null>(null);
 
   useEffect(() => {
     const checkDeviceType = () => {
@@ -55,62 +58,78 @@ const ShowsContainer = ({ shows }: ShowsContainerProps) => {
   }, []);
 
   React.useEffect(() => {
-    void handleOpenModal();
-  }, []);
-
-  const handleOpenModal = async (): Promise<void> => {
-    if (!/\d/.test(pathname) || modalStore.open) {
-      return;
+    if (modalParam) {
+      if (!activeShow || activeShow.id.toString() !== modalParam) {
+        const movieId = parseInt(modalParam);
+        if (!movieId) return;
+        const fetchAndOpen = async () => {
+          try {
+            const response =
+              typeParam === MediaType.TV
+                ? await MovieService.findTvSeries(movieId)
+                : await MovieService.findMovie(movieId);
+            const data = response.data;
+            if (data) {
+              setActiveShow({ ...data, media_type: typeParam || data.media_type });
+              useModalStore.setState({ play: true }); // trigger autoplay when modal opens
+            }
+          } catch (error) {
+            console.error('Failed to load modal data', error);
+          }
+        };
+        void fetchAndOpen();
+      }
+    } else {
+      if (activeShow) {
+        setActiveShow(null);
+        modalStore.reset();
+      }
     }
-    const movieId: number = getIdFromSlug(pathname);
-    if (!movieId) {
-      return;
-    }
-    try {
-      const response: AxiosResponse<Show> = pathname.includes('/tv-shows')
-        ? await MovieService.findTvSeries(movieId)
-        : await MovieService.findMovie(movieId);
-      const data: Show = response.data;
-      if (data)
-        useModalStore.setState({
-          show: data,
-          open: true,
-          play: true,
-          firstLoad: true,
-        });
-    } catch (error) {}
-  };
-
-  // if (!mounted) {
-  //   return (
-  //     <div className="mt-4 min-h-[800px] pt-[5%]">
-  //       <ShowsSkeleton />
-  //     </div>
-  //   );
-  // }
-
-  if (searchStore.query.length > 0) {
-    return <ShowsGrid shows={searchStore.shows} query={searchStore.query} />;
-  }
+  }, [modalParam, typeParam]);
 
   return (
     <>
-      {modalStore.open && (
+      {activeShow && isMobileDevice === null && (
+        <ModalSkeletonLoader />
+      )}
+      {activeShow && isMobileDevice !== null && (
         <Suspense fallback={<ModalSkeletonLoader />}>
-          {isMobileDevice ? <MobileShowModal /> : <DesktopShowModal />}
+          {isMobileDevice ? <MobileShowModal show={activeShow} /> : <DesktopShowModal show={activeShow} />}
         </Suspense>
       )}
-      {shows.map(
-        (item) =>
-          item.visible && (
-            <ShowsCarousel
-              key={item.title}
-              title={item.title}
-              shows={item.shows ?? []}
-            />
-          ),
+      
+      {searchStore.query.length > 0 ? (
+        <ShowsGrid shows={searchStore.shows} query={searchStore.query} />
+      ) : (
+        shows.map(
+          (item) =>
+            item.visible && (
+              <LazyCarouselWrapper key={item.title} item={item} />
+            ),
+        )
       )}
     </>
+  );
+};
+
+const LazyCarouselWrapper = ({ item }: { item: CategorizedShows }) => {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const isIntersecting = useIntersectionObserver(ref, { rootMargin: '400px 0px' });
+
+  return (
+    <div ref={ref} className="min-h-[250px]">
+      {isIntersecting ? (
+        <ShowsCarousel title={item.title} shows={item.shows ?? []} />
+      ) : null}
+    </div>
+  );
+};
+
+const ShowsContainer = ({ shows }: ShowsContainerProps) => {
+  return (
+    <Suspense fallback={null}>
+      <ShowsContainerInner shows={shows} />
+    </Suspense>
   );
 };
 

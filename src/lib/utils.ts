@@ -75,6 +75,7 @@ export function clearSearch(): void {
   const searchInput: HTMLInputElement | null = document.getElementById(
     'search-input',
   ) as HTMLInputElement;
+  if (!searchInput) return;
   searchInput.blur();
   searchInput.value = '';
   searchInput.defaultValue = '';
@@ -84,11 +85,11 @@ export function getNameFromShow(show: Show | null): string {
   return show?.name ?? show?.title ?? '';
 }
 
-let timer: NodeJS.Timeout;
 export function debounce(
   func: (...args: (string | object)[]) => void,
   timeout: number,
 ): (...args: (string | object)[]) => void {
+  let timer: NodeJS.Timeout;
   return (...args: (string | object)[]) => {
     clearTimeout(timer);
     timer = setTimeout(() => {
@@ -139,12 +140,12 @@ export const handleMetadata = cache(
     let keywords: string[] = [];
     let data: Show | null = null;
     try {
-      const response: AxiosResponse<Show> =
+      const response =
         'tv' === type
           ? await MovieService.findTvSeries(movieId)
           : await MovieService.findMovie(movieId);
       data = response.data;
-      const keywordResponse: AxiosResponse<KeyWordResponse> =
+      const keywordResponse =
         await MovieService.getKeywords(movieId, type);
       const res =
         type === 'tv'

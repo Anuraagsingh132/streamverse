@@ -8,7 +8,7 @@ import * as React from 'react';
 import { Icons } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { cn, getNameFromShow, getSlug } from '@/lib/utils';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import CustomImage from './custom-image';
 
 interface ShowsCarouselProps {
@@ -93,70 +93,50 @@ const ShowsCarousel = ({ title, shows }: ShowsCarouselProps) => {
 export default ShowsCarousel;
 
 export const ShowCard = ({ show }: { show: Show | WatchedItem; pathname: string }) => {
+  const router = useRouter();
   const imageOnErrorHandler = (
     event: React.SyntheticEvent<HTMLImageElement, Event>,
   ) => {
     event.currentTarget.src = '/images/grey-thumbnail.jpg';
   };
 
+  const handleOpenModal = () => {
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.set('modal', show.id.toString());
+    searchParams.set('type', show.media_type);
+    router.push(`?${searchParams.toString()}`, { scroll: false });
+  };
+
   return (
-    // <picture className="relative aspect-[2/3] md:aspect-video">
-    <picture className="relative aspect-[2/3]">
-      <a
-        className="pointer-events-none"
-        aria-hidden={false}
-        role="link"
-        aria-label={getNameFromShow(show)}
-        href={`/${show.media_type}/${getSlug(show.id, getNameFromShow(show))}`}
-      />
-      {/* <source */}
-      {/*   // srcSet={`https://image.tmdb.org/t/p/w342/${show.poster_path ?? show.backdrop_path}`} */}
-      {/*   srcSet={ */}
-      {/*     show.backdrop_path ?? show.poster_path */}
-      {/*       ? `https://image.tmdb.org/t/p/w500/${ */}
-      {/*           show.backdrop_path ?? show.poster_path */}
-      {/*         }` */}
-      {/*       : '/images/grey-thumbnail.jpg' */}
-      {/*   } */}
-      {/*   media="(min-width: 780px)" */}
-      {/* /> */}
-      <CustomImage
-        src={
-          show.poster_path ?? show.backdrop_path
-            ? `https://image.tmdb.org/t/p/w500${
-                show.poster_path ?? show.backdrop_path
-              }`
-            : '/images/grey-thumbnail.jpg'
-        }
-        alt={show.title ?? show.name ?? 'poster'}
-        className="h-full w-full cursor-pointer rounded-lg px-1 transition-all md:hover:scale-110"
-        fill
-        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 100vw, 33vw"
-        style={{
-          objectFit: 'cover',
-        }}
-        onClick={() => {
-          const name = getNameFromShow(show);
-          const path: string =
-            show.media_type === MediaType.TV ? 'tv-shows' : 'movies';
-          window.history.pushState(
-            null,
-            '',
-            `${path}/${getSlug(show.id, name)}`,
-          );
-          useModalStore.setState({
-            show: show,
-            open: true,
-            play: true,
-          });
-        }}
-        onError={imageOnErrorHandler}
-      />
-      {show.media_type === MediaType.TV && (show as WatchedItem).seasonNumber && (show as WatchedItem).episodeNumber && (
-        <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1 text-center text-xs text-white">
-          S{(show as WatchedItem).seasonNumber} E{(show as WatchedItem).episodeNumber}
-        </div>
-      )}
-    </picture>
+    <div className="relative aspect-[2/3] px-1">
+      <button
+        type="button"
+        className="relative block w-full h-full cursor-pointer rounded-lg overflow-hidden transition-all md:hover:scale-110 focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-500"
+        aria-label={`Open details for ${getNameFromShow(show)}`}
+        onClick={handleOpenModal}
+      >
+        <CustomImage
+          src={
+            show.poster_path ?? show.backdrop_path
+              ? `https://image.tmdb.org/t/p/w500${
+                  show.poster_path ?? show.backdrop_path
+                }`
+              : '/images/grey-thumbnail.jpg'
+          }
+          alt={show.title ?? show.name ?? 'poster'}
+          fill
+          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 100vw, 33vw"
+          style={{
+            objectFit: 'cover',
+          }}
+          onError={imageOnErrorHandler}
+        />
+        {show.media_type === MediaType.TV && (show as WatchedItem).seasonNumber && (show as WatchedItem).episodeNumber && (
+          <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1 text-center text-xs text-white">
+            S{(show as WatchedItem).seasonNumber} E{(show as WatchedItem).episodeNumber}
+          </div>
+        )}
+      </button>
+    </div>
   );
 };

@@ -52,14 +52,11 @@ type YouTubeEvent = {
   target: YouTubePlayer;
 };
 
-const userAgent =
-  typeof navigator === 'undefined' ? 'SSR' : navigator.userAgent;
-const { isMobile } = getMobileDetect(userAgent);
 const defaultOptions: Record<string, object> = {
   playerVars: {
     // https://developers.google.com/youtube/player_parameters
     rel: 0,
-    mute: isMobile() ? 1 : 0,
+    mute: 0,
     loop: 1,
     autoplay: 1,
     controls: 0,
@@ -72,21 +69,37 @@ const defaultOptions: Record<string, object> = {
   },
 };
 
-const ShowModal = () => {
+interface ShowModalProps {
+  show: Show;
+}
+
+const ShowModal = ({ show: showProp }: ShowModalProps) => {
   // stores
   const modalStore = useModalStore();
-  const IS_MOBILE: boolean = isMobile();
+  const IS_MOBILE: boolean = React.useMemo(() => {
+    if (typeof navigator === 'undefined') return false;
+    const { isMobile } = getMobileDetect(navigator.userAgent);
+    return isMobile();
+  }, []);
   const router = useRouter();
   const { currentlyPlayingEpisodeId, setCurrentlyPlayingEpisodeId } = useModalStore(state => ({ currentlyPlayingEpisodeId: state.currentlyPlayingEpisodeId, setCurrentlyPlayingEpisodeId: state.setCurrentlyPlayingEpisodeId }));
 
   const [trailer, setTrailer] = React.useState('');
   const [isPlaying, setPlaying] = React.useState(true);
   const [genres, setGenres] = React.useState<Genre[]>([]);
-  const [isMuted, setIsMuted] = React.useState<boolean>(
-    modalStore.firstLoad || IS_MOBILE,
-  );
+  const [isMuted, setIsMuted] = React.useState<boolean>(IS_MOBILE);
   const [options, setOptions] =
     React.useState<Record<string, object>>(defaultOptions);
+  const [showTrailer, setShowTrailer] = React.useState(false);
+
+  React.useEffect(() => {
+    if (trailer) {
+      const timer = setTimeout(() => setShowTrailer(true), 300); // Delay for modal animation
+      return () => clearTimeout(timer);
+    } else {
+      setShowTrailer(false);
+    }
+  }, [trailer]);
 
   // State for TV Show Seasons and Episodes
   const [selectedSeasonNumber, setSelectedSeasonNumber] = React.useState<number | null>(null);
@@ -112,8 +125,8 @@ const ShowModal = () => {
   }, []);
 
   const currentTabs = React.useMemo(() => {
-    return getFilteredTabs(modalStore.show?.media_type);
-  }, [modalStore.show?.media_type, getFilteredTabs]);
+    return getFilteredTabs(showProp?.media_type);
+  }, [showProp?.media_type, getFilteredTabs]);
 
   const youtubeRef = React.useRef(null);
   const imageRef = React.useRef<HTMLImageElement>(null);
@@ -126,14 +139,14 @@ const ShowModal = () => {
     setExpandedSynopsisEpisodeId(null);
     // Note: selectedSeasonNumber and episodes are handled by handleGetData and their own useEffect
 
-    if (modalStore.firstLoad || IS_MOBILE) {
+    if (IS_MOBILE) {
       setOptions((state) => ({
         ...state,
         playerVars: { ...(state.playerVars as object), mute: 1 },
       }));
     }
 
-    const show = modalStore.show;
+    const show = showProp;
     if (show?.id) { // Check if show and show.id exist
       // Set initial active tab based on show type when a new show is loaded
       const validTabsForShow = getFilteredTabs(show.media_type);
@@ -154,18 +167,18 @@ const ShowModal = () => {
       setSelectedSeasonNumber(null); // This will trigger episode useEffect to clear episodes
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalStore.show?.id, getFilteredTabs]); // getFilteredTabs is stable due to useCallback
+  }, [showProp?.id, getFilteredTabs]); // getFilteredTabs is stable due to useCallback
 
   // Effect to fetch episodes when selectedSeasonNumber or show ID changes
   React.useEffect(() => {
     const fetchEpisodes = async () => {
-      if (modalStore.show?.id && selectedSeasonNumber !== null && modalStore.show.media_type === MediaType.TV) {
+      if (showProp?.id && selectedSeasonNumber !== null && showProp.media_type === MediaType.TV) {
         setIsEpisodeListVisible(false); // Start fade-out
         // Add a small delay to allow fade-out before skeleton appears
         await new Promise(resolve => setTimeout(resolve, 150)); // 150ms delay for fade-out
         setIsLoadingEpisodes(true);
         try {
-          const response = await MovieService.getTvSeasonDetails(modalStore.show.id, selectedSeasonNumber);
+          const response = await MovieService.getTvSeasonDetails(showProp.id, selectedSeasonNumber);
           setEpisodes(response.data.episodes || []);
         } catch (error) {
           console.error('Failed to fetch episodes:', error);
@@ -180,12 +193,12 @@ const ShowModal = () => {
       }
     };
     void fetchEpisodes();
-  }, [modalStore.show?.id, selectedSeasonNumber, modalStore.show?.media_type]);
+  }, [showProp?.id, selectedSeasonNumber, showProp?.media_type]);
 
   const handleGetData = async () => {
-    const id: number | undefined = modalStore.show?.id;
+    const id: number | undefined = showProp?.id;
     const type: string =
-      modalStore.show?.media_type === MediaType.TV ? 'tv' : 'movie';
+      showProp?.media_type === MediaType.TV ? 'tv' : 'movie';
     if (!id || !type) {
       return;
     }
@@ -193,10 +206,7 @@ const ShowModal = () => {
       id,
       type,
     );
-    // Update the modal store with the full data, ensuring media_type is correctly set
-    const showDataForStore = { ...data, media_type: type as MediaType };
-    modalStore.setShow(showDataForStore);
-    console.log('Fetched show data for modal (and updated store with explicit media_type):', showDataForStore);
+
     if (data?.genres) {
       setGenres(data.genres);
     }
@@ -210,29 +220,31 @@ const ShowModal = () => {
 
     // If it's a TV show
     if (type === 'tv' && data.seasons && data.seasons.length > 0) {
-      console.log('Raw seasons from API:', data.seasons);
+
       const displayableSeasons = data.seasons.filter(season => season.episode_count > 0 && season.name !== "Specials");
-      console.log('Displayable seasons (filtered for episode_count > 0 and name !== \"Specials\"):', displayableSeasons);
+
       if (displayableSeasons.length > 0) {
-        console.log('Setting initial selected season number to:', displayableSeasons[0].season_number);
+
         setSelectedSeasonNumber(displayableSeasons[0].season_number);
       } else {
-        console.log('No displayable seasons found after filtering.');
+
         setSelectedSeasonNumber(null); // No seasons with episodes
       }
     } else {
-      console.log('Not a TV show, or no seasons array in API response, or seasons array is empty. Clearing selectedSeasonNumber.');
+
       setSelectedSeasonNumber(null); // Not a TV show or no seasons
     }
   };
 
   const handleCloseModal = () => {
     modalStore.reset();
-    if (!modalStore.show || modalStore.firstLoad) {
-      window.history.pushState(null, '', '/home');
-    } else {
-      window.history.back();
-    }
+    // If we landed directly on ?modal=... we clear it without going "back" to previous site
+    const newSearchParams = new URLSearchParams(window.location.search);
+      newSearchParams.delete('modal');
+      newSearchParams.delete('type');
+    const searchStr = newSearchParams.toString();
+    const newUrl = searchStr ? `?${searchStr}` : window.location.pathname;
+    router.push(newUrl, { scroll: false });
   };
 
   const createSlug = (name: string, id: number | string): string => {
@@ -244,13 +256,13 @@ const ShowModal = () => {
   };
 
   const handlePlayEpisode = (episodeToPlay: Episode) => {
-    if (!modalStore.show || !modalStore.show.id) {
+    if (!showProp || !showProp.id) {
       console.error("Show details or ID not available to play episode.");
       return;
     }
 
-    const showName = modalStore.show.name || modalStore.show.title || 'show';
-    const slug = createSlug(showName, modalStore.show.id);
+    const showName = showProp.name || showProp.title || 'show';
+    const slug = createSlug(showName, showProp.id);
     
     const url = `/watch/tv/${slug}?season=${episodeToPlay.season_number}&episode=${episodeToPlay.episode_number}`;
     
@@ -279,14 +291,14 @@ const ShowModal = () => {
   const handleToggleWatchlist = () => {
     setIsWatchlisted((prev: boolean) => !prev);
     // TODO: Add API call to update watchlist status on the backend
-    console.log(isWatchlisted ? 'Removed from watchlist' : 'Added to watchlist');
+
   };
 
   const handleShare = async () => {
-    if (!modalStore.show) return;
+    if (!showProp) return;
     // Construct a more user-friendly URL if possible, or ensure your routing handles this well.
     // For now, using a query param based approach that should work if your homepage or a dedicated page can parse it.
-    const showUrl = `${window.location.origin}/?type=${modalStore.show.media_type}&id=${modalStore.show.id}`;
+    const showUrl = `${window.location.origin}/?type=${showProp.media_type}&id=${showProp.id}`;
     try {
       await navigator.clipboard.writeText(showUrl);
       alert('Link copied to clipboard!'); // Replace with a proper toast notification later
@@ -324,7 +336,7 @@ const ShowModal = () => {
 
   return (
     <Dialog
-      open={modalStore.open}
+      open={true}
       onOpenChange={handleCloseModal}
       aria-label="Modal containing show's details">
       <DialogContent className="w-full h-[85vh] overflow-y-auto overflow-x-hidden rounded-md bg-zinc-900 p-0 text-left align-middle shadow-xl dark:bg-zinc-900 sm:max-w-3xl lg:max-w-4xl scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-800 scrollbar-thumb-rounded-full scrollbar-track-rounded-full hover:scrollbar-thumb-slate-600">
@@ -333,12 +345,12 @@ const ShowModal = () => {
             fill
             priority
             ref={imageRef}
-            alt={modalStore?.show?.title ?? 'poster'}
+            alt={showProp?.title ?? 'poster'}
             className="-z-40 z-[1] h-auto w-full object-cover"
-            src={`https://image.tmdb.org/t/p/original${modalStore.show?.backdrop_path}`}
+            src={`https://image.tmdb.org/t/p/original${showProp?.backdrop_path}`}
             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 100vw, 33vw"
           />
-          {trailer && (
+          {showTrailer && trailer && (
             <Youtube
               opts={options}
               onEnd={onEnd}
@@ -348,8 +360,8 @@ const ShowModal = () => {
               videoId={trailer}
               id="video-trailer"
               title={
-                modalStore.show?.title ??
-                modalStore.show?.name ??
+                showProp?.title ??
+                showProp?.name ??
                 'video-trailer'
               }
               className="relative aspect-video w-full"
@@ -360,10 +372,10 @@ const ShowModal = () => {
           <div className="absolute bottom-6 z-20 flex w-full items-center justify-between gap-2 px-10">
             <div className="flex items-center gap-2">
               <Link
-                href={`/watch/${modalStore.show?.media_type === MediaType.MOVIE ? 'movie' : 'tv'}/${modalStore.show?.id}`}
+                href={`/watch/${showProp?.media_type === MediaType.MOVIE ? 'movie' : 'tv'}/${showProp?.id}`}
                 onClick={() => {
-                  if (modalStore.show) {
-                    saveRecent(modalStore.show as Show); // WatchedItem progress can be added later
+                  if (showProp) {
+                    saveRecent(showProp as Show); // WatchedItem progress can be added later
                   }
                 }}
               >
@@ -376,7 +388,7 @@ const ShowModal = () => {
                       className="mr-1.5 h-6 w-6 fill-current"
                       aria-hidden="true"
                     />
-                    {modalStore.show?.media_type === MediaType.MOVIE ? (trailer ? 'Start Watching' : 'Watch Now') : 'Start Watching'}
+                    {showProp?.media_type === MediaType.MOVIE ? (trailer ? 'Start Watching' : 'Watch Now') : 'Start Watching'}
                   </>
                 </Button>
               </Link>
@@ -472,27 +484,27 @@ const ShowModal = () => {
         </div>
         <div className="grid gap-2.5 px-10 pb-10">
           <DialogTitle className="text-lg font-medium leading-6 text-slate-50 sm:text-xl">
-            {modalStore.show?.title ?? modalStore.show?.name}
+            {showProp?.title ?? showProp?.name}
           </DialogTitle>
           <div className="flex items-center space-x-2 text-sm sm:text-base">
             <p className="font-semibold text-green-400">
-              {Math.round((Number(modalStore.show?.vote_average) / 10) * 100) ??
+              {Math.round((Number(showProp?.vote_average) / 10) * 100) ??
                 '-'}
               % Match
             </p>
-            {modalStore.show?.release_date ? (
-              <p>{getYear(modalStore.show?.release_date)}</p>
-            ) : modalStore.show?.first_air_date ? (
-              <p>{getYear(modalStore.show?.first_air_date)}</p>
+            {showProp?.release_date ? (
+              <p>{getYear(showProp?.release_date)}</p>
+            ) : showProp?.first_air_date ? (
+              <p>{getYear(showProp?.first_air_date)}</p>
             ) : null}
-            {modalStore.show?.original_language && (
+            {showProp?.original_language && (
               <span className="grid h-4 w-7 place-items-center text-xs font-bold text-neutral-400 ring-1 ring-neutral-400">
-                {modalStore.show.original_language.toUpperCase()}
+                {showProp.original_language.toUpperCase()}
               </span>
             )}
           </div>
           <DialogDescription className="line-clamp-3 text-xs text-slate-50 dark:text-slate-50 sm:text-sm">
-            {modalStore.show?.overview ?? '-'}
+            {showProp?.overview ?? '-'}
           </DialogDescription>
           <div className="flex items-center gap-2 text-xs sm:text-sm mt-2">
             <span className="text-slate-400">Genres:</span>
@@ -521,15 +533,14 @@ const ShowModal = () => {
           <>
             {/* Season Selector for TV Shows Debugging */}
             {(() => {
-              const isTvShow = modalStore.show?.media_type === MediaType.TV;
-              const seasonsFromStore = modalStore.show?.seasons;
-              console.log('[UI Render] modalStore.show.media_type:', modalStore.show?.media_type);
-              console.log('[UI Render] modalStore.show.seasons (raw from store):', seasonsFromStore);
+              const isTvShow = showProp?.media_type === MediaType.TV;
+              const seasonsFromStore = showProp?.seasons;
+
 
               const _displayableSeasonsFromStore = (isTvShow && seasonsFromStore)
                 ? seasonsFromStore.filter(s => s.episode_count > 0 && s.name !== "Specials")
                 : [];
-              console.log('[UI Render] Displayable seasons calculated for UI:', _displayableSeasonsFromStore);
+
 
               if (isTvShow && _displayableSeasonsFromStore.length > 0) {
                 return (
@@ -561,7 +572,7 @@ const ShowModal = () => {
             })()}
 
             {/* Episode List for TV Shows */}
-            {modalStore.show?.media_type === MediaType.TV && (
+            {showProp?.media_type === MediaType.TV && (
               <div className={`mt-6 px-1 transition-opacity duration-300 ease-in-out ${isEpisodeListVisible ? 'opacity-100' : 'opacity-0'}`}> {/* Adjusted padding & added transition */}
                 {isLoadingEpisodes ? (
                   <div className="space-y-4 py-4">
@@ -671,28 +682,28 @@ const ShowModal = () => {
                 )}
               </div>
             )}
-            {modalStore.show?.media_type === MediaType.TV && !isLoadingEpisodes && episodes.length === 0 && selectedSeasonNumber !== null && (
+            {showProp?.media_type === MediaType.TV && !isLoadingEpisodes && episodes.length === 0 && selectedSeasonNumber !== null && (
               <div className="py-10 text-center text-slate-400">
                 No episodes found for this season.
               </div>
             )}
           </>
         )}
-        {activeTab === 'details' && modalStore.show && (
-          <ShowDetailsTab show={modalStore.show} />
+        {activeTab === 'details' && showProp && (
+          <ShowDetailsTab show={showProp} />
         )}
-        {activeTab === 'cast' && modalStore.show && 
-          (modalStore.show.media_type === MediaType.TV || modalStore.show.media_type === MediaType.MOVIE) && (
+        {activeTab === 'cast' && showProp && 
+          (showProp.media_type === MediaType.TV || showProp.media_type === MediaType.MOVIE) && (
           <ShowCastCrewTab 
-            showId={modalStore.show.id} 
-            mediaType={modalStore.show.media_type as MediaType.TV | MediaType.MOVIE} 
+            showId={showProp.id} 
+            mediaType={showProp.media_type as MediaType.TV | MediaType.MOVIE} 
           />
         )}
-        {activeTab === 'related' && modalStore.show && 
-          (modalStore.show.media_type === MediaType.TV || modalStore.show.media_type === MediaType.MOVIE) && (
+        {activeTab === 'related' && showProp && 
+          (showProp.media_type === MediaType.TV || showProp.media_type === MediaType.MOVIE) && (
           <ShowMoreLikeThisTab 
-            showId={modalStore.show.id} 
-            mediaType={modalStore.show.media_type as MediaType.TV | MediaType.MOVIE} 
+            showId={showProp.id} 
+            mediaType={showProp.media_type as MediaType.TV | MediaType.MOVIE} 
           />
         )}
       </div>

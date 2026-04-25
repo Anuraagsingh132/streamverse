@@ -1,15 +1,8 @@
-'use client';
 
 import React, { useEffect } from 'react';
 import SiteFooter from '@/components/main/site-footer';
 import SiteHeader from '@/components/main/site-header';
-import DonationModal from '@/components/donation-modal';
-import { useDonationModalStore } from '@/stores/useDonationModalStore';
 import { cn } from '@/lib/utils';
-import {
-  getDonationAppealSeen,
-  setDonationAppealSeen,
-} from '@/lib/localStorageUtils';
 
 const FrontLayout = ({ children }: { children: React.ReactNode }) => {
   // const { isDonationModalOpen, openDonationModal, closeDonationModal } = useDonationModalStore();

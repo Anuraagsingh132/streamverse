@@ -1,9 +1,3 @@
-import axios, {
-  type AxiosRequestConfig,
-  type AxiosError,
-  type AxiosInstance,
-  type InternalAxiosRequestConfig,
-} from 'axios';
 import { env } from '@/env.mjs';
 
 /**
@@ -16,42 +10,34 @@ class BaseService {
     }
   }
 
-  static axios(baseUrl: string) {
-    const instanceConfig: AxiosRequestConfig = this.getConfig(baseUrl);
-    const instance: AxiosInstance = axios.create(instanceConfig);
+  static async fetch<T>(baseUrl: string, endpoint: string, init?: RequestInit): Promise<{ data: T }> {
+    const url = `${baseUrl}${endpoint}`;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...((init?.headers as Record<string, string>) || {}),
+    };
 
-    const onRequest = (
-      config: InternalAxiosRequestConfig,
-    ): InternalAxiosRequestConfig => {
-      if (config.baseURL?.includes('themoviedb')) {
-        // const params = config.params as Record<string, unknown>;
-        // config.params = { ...params, api_key: env.NEXT_PUBLIC_TMDB_API_KEY };
-        config.headers.Authorization = `Bearer ${env.NEXT_PUBLIC_TMDB_TOKEN}`;
+    if (url.includes('themoviedb')) {
+      headers['Authorization'] = `Bearer ${env.NEXT_PUBLIC_TMDB_TOKEN}`;
+    }
+
+    const mergedInit: RequestInit = {
+      ...init,
+      headers,
+      next: { revalidate: 3600, ...init?.next }, // 1 hour cache by default
+    };
+
+    try {
+      const response = await fetch(url, mergedInit);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status} url: ${url}`);
       }
-      return config;
-    };
-
-    const onErrorResponse = (
-      error: AxiosError | Error,
-    ): Promise<AxiosError> => {
-      console.log(`error in request: ${error.message}`);
-      return Promise.reject(error);
-    };
-
-    instance.interceptors.request.use(onRequest, onErrorResponse);
-
-    return instance;
-  }
-
-  static getConfig(baseUrl: string): AxiosRequestConfig {
-    return {
-      timeout: 15000,
-      baseURL: baseUrl,
-      responseType: 'json',
-      maxContentLength: 100000,
-      validateStatus: (status: number) => status >= 200 && status < 300,
-      maxRedirects: 5,
-    };
+      const data = await response.json() as T;
+      return { data }; // Mimic axios response structure
+    } catch (error) {
+      console.error(`error in request: ${(error as Error).message}`);
+      throw error;
+    }
   }
 
   static isRejected = (

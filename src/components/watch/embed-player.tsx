@@ -16,7 +16,7 @@ function EmbedPlayer(props: EmbedPlayerProps) {
     return () => {
       iframe?.removeEventListener('load', handleIframeLoaded);
     };
-  }, []);
+  }, [props.url]);
 
   const ref = React.useRef<HTMLIFrameElement>(null);
 

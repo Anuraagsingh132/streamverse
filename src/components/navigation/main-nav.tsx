@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useSearchStore } from '@/stores/search';
 import { ModeToggle as ThemeToggle } from '@/components/theme-toggle';
 import { DebouncedInput } from '@/components/debounced-input';
@@ -41,31 +41,24 @@ export function MainNav({ items }: MainNavProps) {
   const searchStore = useSearchStore();
   const [isScrolled, setIsScrolled] = React.useState(false);
 
+  const searchParams = useSearchParams();
+  const qParam = searchParams.get('q');
+
   React.useEffect(() => {
-    window.addEventListener('popstate', handlePopstateEvent, false);
-    return () => {
-      window.removeEventListener('popstate', handlePopstateEvent, false);
-    };
-  }, []);
-
-  const handlePopstateEvent = () => {
-    const pathname = window.location.pathname;
-    const search: string = getSearchValue('q');
-
-    if (!search?.length || !pathname.includes('/search')) {
+    if (!qParam) {
       searchStore.reset();
       searchStore.setOpen(false);
-    } else if (search?.length) {
+    } else {
       searchStore.setOpen(true);
       searchStore.setLoading(true);
-      searchStore.setQuery(search);
+      searchStore.setQuery(qParam);
       setTimeout(() => {
         handleDefaultSearchBtn();
       }, 10);
       setTimeout(() => {
         handleDefaultSearchInp();
       }, 20);
-      MovieService.searchMovies(search)
+      MovieService.searchMovies(qParam)
         .then((response: SearchResult) => {
           void searchStore.setShows(response.results);
         })
@@ -74,24 +67,23 @@ export function MainNav({ items }: MainNavProps) {
         })
         .finally(() => searchStore.setLoading(false));
     }
-  };
+  }, [qParam]);
 
   async function searchShowsByQuery(value: string) {
     if (!value?.trim()?.length) {
       if (path === '/search') {
         router.push('/home');
       } else {
-        window.history.pushState(null, '', path);
+        router.push(path, { scroll: false });
       }
       return;
     }
 
-    if (getSearchValue('q')?.trim()?.length) {
-      window.history.replaceState(null, '', `search?q=${value}`);
-    } else {
-      window.history.pushState(null, '', `search?q=${value}`);
-    }
+    const newSearchParams = new URLSearchParams(window.location.search);
+    newSearchParams.set('q', value);
+    router.push(`search?${newSearchParams.toString()}`, { scroll: false });
 
+    // Instantly update UI for snappy feedback
     searchStore.setQuery(value);
     searchStore.setLoading(true);
     const shows = await MovieService.searchMovies(value);
@@ -105,12 +97,19 @@ export function MainNav({ items }: MainNavProps) {
 
   // change background color on scroll
   React.useEffect(() => {
+    let ticking = false;
     const changeBgColor = () => {
-      window.scrollY > 0 ? setIsScrolled(true) : setIsScrolled(false);
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setIsScrolled(window.scrollY > 0);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
-    window.addEventListener('scroll', changeBgColor);
+    window.addEventListener('scroll', changeBgColor, { passive: true });
     return () => window.removeEventListener('scroll', changeBgColor);
-  }, [isScrolled]);
+  }, []);
 
   const handleChangeStatusOpen = (value: boolean): void => {
     searchStore.setOpen(value);
