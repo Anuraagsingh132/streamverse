@@ -7,7 +7,10 @@ export default function Page({ params }: { params: { slug: string } }) {
   const id = params.slug.split('-').pop();
 
   // Example with vidbinge.dev
-  return <EmbedPlayer url={`https://111movies.com/movie/${id}`} />;
+  https://vixsrc.to/movie/{tmdbId}
+  return <EmbedPlayer url={`https://vixsrc.to/movie/${id}`} />;
+
+  //return <EmbedPlayer url={`https://111movies.com/movie/${id}`} />;
 
   //return <EmbedPlayer url={`https://vidsrc.su/embed/movie/${id}`} />;
   //return <EmbedPlayer url={`https://flicky.host/embed/movie/?id=${id}`} />;
