@@ -9,6 +9,7 @@ import { useSearchStore } from '@/stores/search';
 import { useModalStore } from '@/stores/modal';
 import { handleDefaultSearchBtn, handleDefaultSearchInp } from '@/lib/utils';
 import MovieService from '@/services/MovieService';
+import { showPrefetchCache } from '@/lib/prefetch-cache';
 
 // Lazy load modal components
 const DesktopShowModal = lazy(() => import('@/components/shows-modal'));
@@ -62,21 +63,33 @@ function SearchContainer({ shows, query }: SearchContainerProps) {
     return () => window.removeEventListener('resize', checkDeviceType);
   }, []);
 
-  // Listen for ?modal=ID&type=TYPE URL params and fetch the show
+  // Listen for ?modal=ID&type=TYPE URL params — check prefetch cache first
   useEffect(() => {
     if (modalParam) {
       if (!activeShow || activeShow.id.toString() !== modalParam) {
         const movieId = parseInt(modalParam);
         if (!movieId) return;
+        const mediaType = typeParam || MediaType.MOVIE;
+
+        // Check the prefetch cache first for instant opening
+        const cached = showPrefetchCache.get(movieId, mediaType);
+        if (cached) {
+          setActiveShow(cached);
+          useModalStore.setState({ play: true });
+          return;
+        }
+
+        // Cache miss: fetch from network
         const fetchAndOpen = async () => {
           try {
             const response =
-              typeParam === MediaType.TV
+              mediaType === MediaType.TV
                 ? await MovieService.findTvSeries(movieId)
                 : await MovieService.findMovie(movieId);
             const data = response.data;
             if (data) {
-              setActiveShow({ ...data, media_type: typeParam || data.media_type });
+              const show = { ...data, media_type: mediaType };
+              setActiveShow(show);
               useModalStore.setState({ play: true });
             }
           } catch (error) {

@@ -8,6 +8,7 @@ import * as React from 'react';
 import { Icons } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { cn, getNameFromShow, getSlug } from '@/lib/utils';
+import { showPrefetchCache } from '@/lib/prefetch-cache';
 import { usePathname, useRouter } from 'next/navigation';
 import CustomImage from './custom-image';
 
@@ -107,6 +108,12 @@ export const ShowCard = ({ show }: { show: Show | WatchedItem; pathname: string 
     router.push(`?${searchParams.toString()}`, { scroll: false });
   };
 
+  const handlePrefetch = () => {
+    if (show.id && show.media_type) {
+      void showPrefetchCache.prefetch(show.id, show.media_type as MediaType);
+    }
+  };
+
   return (
     <div className="relative aspect-[2/3] px-1">
       <button
@@ -114,6 +121,7 @@ export const ShowCard = ({ show }: { show: Show | WatchedItem; pathname: string 
         className="relative block w-full h-full cursor-pointer rounded-lg overflow-hidden transition-all md:hover:scale-110 focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-500"
         aria-label={`Open details for ${getNameFromShow(show)}`}
         onClick={handleOpenModal}
+        onPointerEnter={handlePrefetch}
       >
         <CustomImage
           src={
